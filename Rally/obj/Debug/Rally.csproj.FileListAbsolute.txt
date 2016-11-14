@@ -1,0 +1,9 @@
+C:\Users\maddirsh\Desktop\IntegrationService\ConsoleApplication1\bin\Debug\ConsoleApplication1.exe.config
+C:\Users\maddirsh\Desktop\IntegrationService\Rally\bin\Debug\ConsoleApplication1.exe.config
+C:\Users\maddirsh\Desktop\IntegrationService\Rally\bin\Debug\ConsoleApplication1.exe
+C:\Users\maddirsh\Desktop\IntegrationService\Rally\bin\Debug\ConsoleApplication1.pdb
+C:\Users\maddirsh\Desktop\IntegrationService\Rally\bin\Debug\Rally.RestApi.dll
+C:\Users\maddirsh\Desktop\IntegrationService\Rally\bin\Debug\Rally.RestApi.xml
+C:\Users\maddirsh\Desktop\IntegrationService\Rally\obj\Debug\Rally.csprojResolveAssemblyReference.cache
+C:\Users\maddirsh\Desktop\IntegrationService\Rally\obj\Debug\ConsoleApplication1.exe
+C:\Users\maddirsh\Desktop\IntegrationService\Rally\obj\Debug\ConsoleApplication1.pdb
