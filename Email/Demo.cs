@@ -8,7 +8,10 @@ namespace Email
         {
             EmailOperation operation = new EmailOperation();
             //operation.createMailBox();
-            operation.fetchEmail();
+            //operation.getAllEmail();
+            //operation.fetchUnreadSubjectLines();
+            //operation.FetchUnreadEmails();
+
 
 
             Console.ReadLine();

@@ -19,7 +19,7 @@ namespace Email
             try
             {
                 //Authenticate with the Outlook Server
-                imap.ConnectSsl(Credential.outlookImapHost, 993);
+                imap.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
                 imap.Login(Credential.outlookUserName, Credential.outlookPassword);
 
                 //Select a mailbox folder
@@ -38,11 +38,11 @@ namespace Email
             }
             catch (Imap4Exception)
             {
-                Console.WriteLine("Imap-Exception");
+                throw new Imap4Exception();
             }
             catch (Exception)
             {
-                Console.WriteLine("Exception");
+                throw new Exception();
             }
             finally
             {
@@ -51,112 +51,136 @@ namespace Email
         }
         #endregion
 
-        #region fetchEmail()
+        #region fetchUnreadSubjectLines()
         /// <summary>
-        /// Method that scans an inbox and parses only the unread subject lines
+        /// Method that (FETCHES unread EMAIL OBJECT) and stores it into a list. 
+        /// The list is iterated to parse only the subject line, but it can be used to get the body as well.
+        /// iSSUE: fetch entire email object and mark as read or fetch only the Header obj and mark as read manually??
         /// </summary>
-
+        
         public void fetchUnreadSubjectLines()
         {
             //Authenticate with the Outlook Server
             Imap4Client imap = new Imap4Client();
-            imap.ConnectSsl(Credential.outlookImapHost, 993);
-            imap.Login(Credential.outlookUserName, Credential.outlookPassword);
 
-            //setup Enviornment
-            Mailbox inbox = imap.SelectMailbox("inbox");
-            int[] unread = inbox.Search("UNSEEN");
-            Console.WriteLine("Unread Messages: " + unread.Length);
-            
-            List<string> unreadList = new List<string>();
-            //MessageCollection mc = new MessageCollection();
-
-            if (unread.Length > 0)
-            {
-                for (int i = 1; i <= unread.Length; i++)
-                {
-                    Header header = (inbox.Fetch.HeaderObject(i));
-                    Console.WriteLine(header.Subject);
-
-                    //only printing - but not storing them in a list.
-
-                    //Message msg = (inbox.Fetch.MessageObject(i));
-                    //unreadList.Add(msg.ToString());
-                    ////Console.WriteLine(msg.Subject);
-                }
-            }
-            else
-            {
-                Console.WriteLine("No unread mail");
-            }
-
-            //foreach (var item in unreadList)
-            //{
-            //    Console.WriteLine(item.ToString());
-            //}
-        }
-        #endregion
-
-        #region getMessages()
-        public void GetMessages()
-        {
-            Imap4Client imap = new Imap4Client();
             try
             {
-                //Connect and Authenticate
-                Imap4Client client = new Imap4Client();
-                client.ConnectSsl("imap-mail.outlook.com", 993);
-                client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+                imap.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
+                imap.Login(Credential.outlookUserName, Credential.outlookPassword);
 
-                //Stage the enviornment
-                Mailbox inbox = client.SelectMailbox("inbox");
-                MessageCollection mc = new MessageCollection();
+                //setup Enviornment
+                Mailbox inbox = imap.SelectMailbox("inbox");
+                int[] unread = inbox.Search("UNSEEN");
+                Console.WriteLine("Unread Messages: " + unread.Length);
 
-                //iterate through the messages
-                for (int n = 1; n < inbox.MessageCount + 1; n++)
+                //List to store ONLY the unread subject lines
+                List<Message> unreadList = new List<Message>();
+
+                if (unread.Length > 0)
                 {
-                    Message newMessage = inbox.Fetch.MessageObject(n);
-                    Header getSubject = inbox.Fetch.HeaderObject(n);
-                    //mc.Add(newMessage);
-                    Console.WriteLine(getSubject.Subject);
-                    Console.WriteLine(newMessage.BodyText.Text);
-
-                    //Mailbox processed = new Mailbox();
-                    //processed.
+                    //Loop to load the unread subject lines into a list<Message>
+                    //Messages will be marked as read
+                    for (int i = 1; i <= unread.Length; i++)
+                    {
+                        Message unreadMsg = (inbox.Fetch.MessageObject(i));
+                        unreadList.Add(unreadMsg);
+                    }
+                    //foreach to print the subject lines
+                    foreach (Message item in unreadList)
+                    {
+                        Console.WriteLine(item.Subject);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("No unread mail");
                 }
 
-                //returns the object form
-                //foreach (var item in mc)
-                //{
-                //    Console.WriteLine(item);
-                //}
             }
             catch (Imap4Exception)
             {
-                Console.WriteLine("Exception IMap");
+                throw new Imap4Exception();
             }
             catch (Exception)
             {
-                Console.WriteLine("EXception");
+                throw new Exception();
             }
             finally
             {
-                if (imap.IsConnected)
+                imap.Disconnect();
+            }
+        }
+
+        #endregion
+
+        #region fetchUnreadEmails()
+        /// <summary>
+        /// Fetches all the unread emails and prints their subject along with their body
+        /// </summary>
+
+        public void FetchUnreadEmails()
+        {
+            Imap4Client client = new Imap4Client();
+            List<Message> unreadList = new List<Message>();
+
+            try
+            {
+                //Authenticate 
+                client.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
+                client.Login(Credential.outlookUserName, Credential.outlookPassword);
+
+                //Stage the enviornment
+                Mailbox inbox = client.SelectMailbox("inbox");
+                int[] unread = inbox.Search("UNSEEN");
+                Console.WriteLine("Unread Messages: " + unread.Length);
+
+                if (unread.Length > 0)
                 {
-                    imap.Disconnect();
+                    //iterate and store each unread email object into a list
+                    for (int n = 1; n <= unread.Length; n++)
+                    {
+                        Message newMessage = inbox.Fetch.MessageObject(n);
+                        unreadList.Add(newMessage); 
+                    }
+                    foreach (Message item in unreadList)
+                    {
+                        Console.WriteLine(item.Subject);
+                        Console.WriteLine(item.BodyText.Text);
+                    }
                 }
+                else
+                {
+                    Console.WriteLine("No Unread emails found");
+                }
+                
+            }
+            catch (Imap4Exception)
+            {
+                throw new Imap4Exception();
+            }
+            catch (Exception)
+            {
+                throw new Exception();
+            }
+            finally
+            {
+                client.Disconnect();
+                unreadList.Clear();
             }
         }
         #endregion
 
         #region CreateMailBOX()
+        /// <summary>
+        /// Create a new folder within the outlook email server
+        /// </summary>
 
         public void createMailBox()
         {
+            Imap4Client client = new Imap4Client();
             try
             {
                 //Connect and Authenticate
-                Imap4Client client = new Imap4Client();
                 client.ConnectSsl(Credential.outlookImapHost, 993);
                 client.Login(Credential.outlookUserName, Credential.outlookPassword);
 
@@ -166,11 +190,15 @@ namespace Email
             }
             catch (Imap4Exception)
             {
-                Console.WriteLine("Imap Exception");
+                throw new Imap4Exception();
             }
             catch (Exception)
             {
-                Console.WriteLine("Exception");
+                throw new Exception();
+            }
+            finally
+            {
+                client.Disconnect();
             }
         }
         #endregion
@@ -178,9 +206,7 @@ namespace Email
     }
 }
 
-//Able to get the subjects
-//Able to get the body
-
-//Need to move the messages to a folder once processed?
-//If the messages are moved, then the program does not search for unwanted email.
-//The list will be a short iteration
+//11/15/16 toDO
+//Mark as read manually
+//copy and delete
+//Move Messages to a different folder once parsed
