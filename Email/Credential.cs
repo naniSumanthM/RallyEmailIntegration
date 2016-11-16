@@ -1,5 +1,4 @@
-﻿using System;
-
+﻿
 namespace Email
 {
     class Credential
@@ -12,6 +11,7 @@ namespace Email
         public const int outlookImapPort = 993;
         public const string outlookUserName = "sumanthmaddirala@outlook.com";
         public const string outlookPassword = "iYmcmb24";
+        public const string processedFolder = "PROCESSED";
 
     }
 }

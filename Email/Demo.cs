@@ -9,10 +9,12 @@ namespace Email
             EmailOperation operation = new EmailOperation();
             //operation.createMailBox();
             //operation.getAllEmail();
-            //operation.fetchUnreadSubjectLines();
+            operation.fetchUnreadSubjectLines();
             //operation.FetchUnreadEmails();
+            //operation.moveMessages();
+            //operation.move_inbox_messages_gmail();
 
-
+            //operation.moveUnreadEmails();
 
             Console.ReadLine();
         }
