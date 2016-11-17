@@ -7,14 +7,13 @@ namespace Email
         static void Main(string[] args)
         {
             EmailOperation operation = new EmailOperation();
-            //operation.createMailBox();
-            //operation.getAllEmail();
-            operation.fetchUnreadSubjectLines();
-            //operation.FetchUnreadEmails();
-            //operation.moveMessages();
-            //operation.move_inbox_messages_gmail();
 
-            //operation.moveUnreadEmails();
+            //operation.FetchUnreadEmails();
+            //operation.fetchUnreadSubjectLines();  
+            //operation.moveMessages();
+            //operation.moveUnreadEmail();
+
+            operation.markAsRead();
 
             Console.ReadLine();
         }
