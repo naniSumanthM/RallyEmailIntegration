@@ -331,6 +331,11 @@ namespace Email
             Imap4Client client = new Imap4Client();
             List<Header> unreadHeaderList = new List<Header>();
 
+            List<Message> unreadMessageList = new List<Message>();
+
+
+            FlagCollection flags = new FlagCollection();
+
             try
             {
                 //Authenticate
@@ -340,22 +345,31 @@ namespace Email
                 //Stage the enviornment
                 Mailbox inbox = client.SelectMailbox(Credential.inboxFolder);
                 int[] unread = inbox.Search(Credential.statusUnseen);
-                Console.WriteLine("Unread Messages"+unread.Length);
+                Console.WriteLine("Unread Messages " + unread.Length);
 
-                if (unread.Length>0)
+                if (unread.Length > 0)
                 {
                     //iterate and add the unread header object into the list
                     for (int i = 0; i < unread.Length; i++)
                     {
-                        Header unreadHeader = (inbox.Fetch.HeaderObject(unread[i]));
-                        Console.WriteLine(unreadHeader.ConfirmRead); //Need to mark a message as read
-                        unreadHeaderList.Add(unreadHeader);
+                        //Header unreadHeader = (inbox.Fetch.HeaderObject(unread[i]));
+                        //unreadHeaderList.Add(unreadHeader);
+
+                        Message unreadMesage = inbox.Fetch.MessageObject(unread[i]);
+                        unreadMessageList.Add(unreadMesage);
                     }
 
-                    foreach (var header in unreadHeaderList)
+                    //foreach (var header in unreadHeaderList)
+                    //{
+                    //    Console.WriteLine(header.Subject);
+                    //}
+
+                    foreach (var item in unreadMessageList)
                     {
-                        Console.WriteLine(header.Subject);
+                        FlagCollection f = new FlagCollection { "SEEN" };
+                        inbox.RemoveFlagsSilent(Convert.ToInt32(item), f);
                     }
+
                 }
                 else
                 {
@@ -374,6 +388,46 @@ namespace Email
             {
                 client.Disconnect();
                 unreadHeaderList.Clear();
+            }
+        }
+        #endregion
+
+        #region scourceVersionMarkasRead
+
+        public void unreadMsg()
+        {
+            Imap4Client client = new Imap4Client();
+            FlagCollection flags = new FlagCollection {"UNSEEN"};
+
+            try
+            {
+                //Authenticate
+                client.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
+                client.Login(Credential.outlookUserName, Credential.outlookPassword);
+
+                Mailbox inbox = client.SelectMailbox("inbox");
+                int[] unread = inbox.Search("all");
+
+                Console.WriteLine("Message Count: "+unread.Length);
+
+                foreach (var id in unread)
+                {
+                    Message msg = inbox.Fetch.MessageObject(id);
+                    inbox.AddFlagsSilent(id, flags);
+                }
+
+            }
+            catch (Imap4Exception ie)
+            {
+                Console.WriteLine(string.Format("Imap4 Exception: {0}", ie.Message));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(string.Format("Unexpected Exception: {0}"), e.Message);
+            }
+            finally
+            {
+                client.Disconnect();
             }
         }
         #endregion

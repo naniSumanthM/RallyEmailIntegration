@@ -13,7 +13,7 @@ namespace Email
             //operation.moveMessages();
             //operation.moveUnreadEmail();
 
-            operation.markAsRead();
+            operation.unreadMsg();
 
             Console.ReadLine();
         }

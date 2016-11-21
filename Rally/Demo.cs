@@ -14,8 +14,7 @@ namespace Rally
             //operation.getUserStories(QueryField.WS_UCIT, QueryField.ST_lotteryWinners);
             //operation.getUSTA(QueryField.WS_UCIT, QueryField.ST_lotteryWinners);
             //operation.CreateTask("RefinedTask", "No more duplication of Authenticate", QueryField.USER_Jostte, "1", QueryField.US_9);
-            operation.CreateUserStoryFromList(QueryField.WS_zScratch, QueryField.ST_SampleProject);
-
+            operation.UserStorySync(QueryField.WS_zScratch, QueryField.ST_SampleProject);
 
             Console.ReadLine();
         }

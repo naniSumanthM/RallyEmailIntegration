@@ -7,6 +7,7 @@ namespace Rally
     using Rally.RestApi.Response;
     using System.Collections.Generic;
     using System.Net;
+    using ActiveUp.Net.Mail;
 
     class RallyOperation
     {
@@ -338,11 +339,13 @@ namespace Rally
             Console.WriteLine("Start");
             try
             {
+                #region foreach
                 //foreach (var item in usList)
                 //{
                 //    toCreate[RallyField.nameForWSorUSorTA] = usList[i];
                 //    CreateResult cr = _api.Create("HierarchicalRequirement", toCreate);
                 //}
+                #endregion
 
                 for (int i = 0; i < usList.Count; i++)
                 {
@@ -358,6 +361,66 @@ namespace Rally
         }
         #endregion
 
+        #region: Create US through unread Mail Messages
+        //testing a list of userstories
+        public void UserStorySync(string usWorkspace, string usProject)
+        {
+            //Authenticate with Rally
+            this.EnsureRallyIsAuthenticated();
+
+            //List to add the unreadMessages
+            List<Message> unreadMessageList = new List<Message>();
+
+            //Set up the US
+            DynamicJsonObject toCreate = new DynamicJsonObject();
+            toCreate[RallyField.workSpace] = usWorkspace;
+            toCreate[RallyField.project] = usProject;
+
+            Console.WriteLine("Start");
+            try
+            {
+                //Authenticate with Imap
+                Imap4Client imap = new Imap4Client();
+                imap.ConnectSsl(Outlook.outlookHost, Outlook.outlookPort);
+                imap.Login(Outlook.outlookUsername, Outlook.outlookPassword);
+
+                //setup Imap enviornment
+                Mailbox inbox = imap.SelectMailbox(Outlook.outlookInboxFolder);
+                int[] unread = inbox.Search(Outlook.outlookUnread);
+                Console.WriteLine("Unread Messages: " + unread.Length);
+
+                if (unread.Length > 0)
+                {
+                    //fetch all the messages and add to the unreadMessageList
+                    for (int i = 0; i < unread.Length; i++)
+                    {
+                        Message msg = inbox.Fetch.MessageObject(unread[i]);
+                        unreadMessageList.Add(msg);
+                    }
+
+                    for (int i = 0; i < unreadMessageList.Count; i++)
+                    {
+                        toCreate[RallyField.nameForWSorUSorTA] = Convert.ToString(unreadMessageList[i]);
+                        CreateResult cr = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+                    }
+
+                    //Move Fetched Messages
+                    foreach (var item in unread)
+                    {
+                        inbox.MoveMessage(item,Outlook.outlookProcessedFolder);
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Unread Email Not-Found");
+                }
+            }
+            catch (WebException)
+            {
+                Console.WriteLine(QueryField.webExceptionMessage);
+            }
+        }
+        #endregion
     }
 }
 
@@ -370,7 +433,8 @@ namespace Rally
  <<Projects>>
  -Create a user Story and a task at the same time
  -Able to pull attachments from an email and associate with a US   
-
-    --MAIL research
-    --serilization research
+ --Able to handle the processed folder to unread
  */
+
+
+
