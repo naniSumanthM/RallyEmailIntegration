@@ -400,7 +400,8 @@ namespace Rally
 
                     for (int i = 0; i < unreadMessageList.Count; i++)
                     {
-                        toCreate[RallyField.nameForWSorUSorTA] = Convert.ToString(unreadMessageList[i]);
+                        toCreate[RallyField.nameForWSorUSorTA] = (unreadMessageList[i].Subject);
+                        toCreate[RallyField.description] = (unreadMessageList[i].BodyText.Text);
                         CreateResult cr = _api.Create(RallyField.hierarchicalRequirement, toCreate);
                     }
 
@@ -414,6 +415,7 @@ namespace Rally
                 {
                     Console.WriteLine("Unread Email Not-Found");
                 }
+                Console.WriteLine("End");
             }
             catch (WebException)
             {
@@ -423,7 +425,6 @@ namespace Rally
         #endregion
     }
 }
-
 
 /*
  * <<CleanUP>>

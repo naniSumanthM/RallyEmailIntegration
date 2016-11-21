@@ -95,6 +95,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Demo.cs" />
+    <Compile Include="Outlook.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueryField.cs" />
     <Compile Include="RallyEnviornment.cs" />
