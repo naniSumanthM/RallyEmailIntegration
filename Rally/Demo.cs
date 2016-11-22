@@ -16,6 +16,7 @@ namespace Rally
             //operation.CreateTask("RefinedTask", "No more duplication of Authenticate", QueryField.USER_Jostte, "1", QueryField.US_9);
             operation.UserStorySync(QueryField.WS_zScratch, QueryField.ST_SampleProject);
 
+
             Console.ReadLine();
         }
     }

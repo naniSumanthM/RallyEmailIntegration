@@ -7,14 +7,8 @@ namespace Email
         static void Main(string[] args)
         {
             EmailOperation operation = new EmailOperation();
-
-            //operation.FetchUnreadEmails();
-            //operation.fetchUnreadSubjectLines();  
-            //operation.moveMessages();
-            //operation.moveUnreadEmail();
-
-            operation.unreadMsg();
-
+            operation.markHeaderObjAsUnread();
+                
             Console.ReadLine();
         }
     }

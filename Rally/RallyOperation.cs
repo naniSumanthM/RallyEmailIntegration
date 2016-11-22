@@ -433,8 +433,6 @@ namespace Rally
 
  <<Projects>>
  -Create a user Story and a task at the same time
- -Able to pull attachments from an email and associate with a US   
- --Able to handle the processed folder to unread
  */
 
 

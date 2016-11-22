@@ -13,6 +13,7 @@ C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\ActiveUp.Net.OpenPG
 C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\ActiveUp.Net.Pop3.dll
 C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\ActiveUp.Net.Smtp.dll
 C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\ActiveUp.Net.WhoIs.dll
+C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll
 C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\ActiveUp.Net.xml
 C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\ActiveUp.Net.Common.xml
 C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\ActiveUp.Net.Dns.xml
@@ -26,4 +27,3 @@ C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\ActiveUp.Net.WhoIs.
 C:\Users\maddirsh\Desktop\IntegrationService\Email\obj\Debug\Email.csprojResolveAssemblyReference.cache
 C:\Users\maddirsh\Desktop\IntegrationService\Email\obj\Debug\Emal.exe
 C:\Users\maddirsh\Desktop\IntegrationService\Email\obj\Debug\Emal.pdb
-C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.dll
