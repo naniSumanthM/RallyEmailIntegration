@@ -7,8 +7,8 @@
     <ProjectGuid>{567A0A7F-B9C7-4AAE-B2B5-B3CD192001DE}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Emal</RootNamespace>
-    <AssemblyName>Emal</AssemblyName>
+    <RootNamespace>Email</RootNamespace>
+    <AssemblyName>Email</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

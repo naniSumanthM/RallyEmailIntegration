@@ -1,13 +1,15 @@
-﻿using System;
-
-namespace Rally
+﻿namespace Rally
 {
+    using System;
+    using System.IO;
     using Rally.RestApi;
     using Rally.RestApi.Json;
     using Rally.RestApi.Response;
     using System.Collections.Generic;
     using System.Net;
     using ActiveUp.Net.Mail;
+    using System.Drawing;
+    using System.Linq;
 
     class RallyOperation
     {
@@ -30,7 +32,7 @@ namespace Rally
 
         private void EnsureRallyIsAuthenticated()
         {
-            if (this._api.AuthenticationState != RallyRestApi.AuthenticationResult.Authenticated) //?
+            if (this._api.AuthenticationState != RallyRestApi.AuthenticationResult.Authenticated)
             {
                 _api.Authenticate(this.UserName, this.Password, ServerName, null, RallyField.allowSSO);
             }
@@ -408,7 +410,7 @@ namespace Rally
                     //Move Fetched Messages
                     foreach (var item in unread)
                     {
-                        inbox.MoveMessage(item,Outlook.outlookProcessedFolder);
+                        inbox.MoveMessage(item, Outlook.outlookProcessedFolder);
                     }
                 }
                 else
@@ -423,8 +425,149 @@ namespace Rally
             }
         }
         #endregion
-    }
-}
+
+        #region: imageToBase64
+
+        // Converts image to Base 64 Encoded string
+        public static string imageToBase64(Image image, System.Drawing.Imaging.ImageFormat format)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            {
+                image.Save(ms, format);
+                // Convert Image to byte[]
+                byte[] imageBytes = ms.ToArray();
+
+                // Convert byte[] to Base64 String
+                string base64String = Convert.ToBase64String(imageBytes);
+
+                return base64String;
+            }
+        }
+        #endregion
+
+        #region: create userstory with attachment
+        ///<summary>
+        ///Pushes an attachment file to an existing user story
+        /// </summary>
+
+        public void pushAttachmentToUS(string usWorkspace, string usProject)
+        {
+            this.EnsureRallyIsAuthenticated();
+
+            string storyReference = "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/70836533324";
+		
+            //Process - Attaching the image to the user story
+			
+            // Read In Image Content
+            String imageFilePath = "C:\\Users\\maddirsh\\Desktop\\";
+            String imageFileName = "web.png";
+            String fullImageFile = imageFilePath + imageFileName;
+            Image myImage = Image.FromFile(fullImageFile);
+
+            // Convert Image to Base64 format
+            string imageBase64String = imageToBase64(myImage, System.Drawing.Imaging.ImageFormat.Png);
+
+            // Length calculated from Base64String converted back
+            var imageNumberBytes = Convert.FromBase64String(imageBase64String).Length;
+
+            // DynamicJSONObject for AttachmentContent
+            DynamicJsonObject myAttachmentContent = new DynamicJsonObject();
+            myAttachmentContent["Content"] = imageBase64String; //string 
+
+            try
+            {
+                CreateResult myAttachmentContentCreateResult = _api.Create("AttachmentContent", myAttachmentContent); 
+                String myAttachmentContentRef = myAttachmentContentCreateResult.Reference;
+                Console.WriteLine("Created: " + myAttachmentContentRef);
+
+                // DynamicJSONObject for Attachment Container
+                DynamicJsonObject myAttachment = new DynamicJsonObject();
+                myAttachment["Artifact"] = storyReference;
+                myAttachment["Content"] = myAttachmentContentRef;
+                myAttachment["Name"] = "AttachmentFromREST.png";
+                myAttachment["Description"] = "Attachment Desc";
+                myAttachment["ContentType"] = "image/png";
+                myAttachment["Size"] = imageNumberBytes;
+
+                CreateResult myAttachmentCreateResult = _api.Create("Attachment", myAttachment);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Unhandled exception occurred: " + e.StackTrace);
+                Console.WriteLine(e.Message);
+            }   
+        }
+        #endregion
+
+        #region: create userStory with attachment
+        ///<summary>
+        ///Method that creates a user story with an attachment
+        /// </summary>
+
+        public void createUsWithAttachment(string workspace, string project, string userStoryName, string userStoryDescription)
+        {
+            this.EnsureRallyIsAuthenticated();
+
+            //UserStory Setup
+            DynamicJsonObject toCreate = new DynamicJsonObject();
+            toCreate[RallyField.workSpace] = workspace;
+            toCreate[RallyField.project] = project;
+            toCreate[RallyField.nameForWSorUSorTA] = userStoryName;
+            toCreate[RallyField.description] = userStoryDescription;
+
+            //get the image reference - assume that this is where the image lives after being downloaded from Outlook
+            String imageFilePath = "C:\\Users\\maddirsh\\Desktop\\";
+            String imageFileName = "web.png";
+            String fullImageFile = imageFilePath + imageFileName;
+            Image myImage = Image.FromFile(fullImageFile);
+
+            // Convert Image to Base64 format
+            string imageBase64String = imageToBase64(myImage, System.Drawing.Imaging.ImageFormat.Png);
+
+            // Length calculated from Base64String converted back
+            var imageNumberBytes = Convert.FromBase64String(imageBase64String).Length;
+
+            // DynamicJSONObject for AttachmentContent
+            DynamicJsonObject myAttachmentContent = new DynamicJsonObject();
+            myAttachmentContent["Content"] = imageBase64String;
+
+            try
+            {
+                //create user story
+                CreateResult createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+
+                //create attachment
+                CreateResult myAttachmentContentCreateResult = _api.Create("AttachmentContent", myAttachmentContent);
+                String myAttachmentContentRef = myAttachmentContentCreateResult.Reference;
+                Console.WriteLine("Created: " + myAttachmentContentRef);
+
+                // DynamicJSONObject for Attachment Container
+                DynamicJsonObject myAttachment = new DynamicJsonObject();
+                //myAttachment["Artifact"] = ; //need to get the reference to the userstory --problem is I am wondering if all this can be done in one step
+                //Or else we need to again write a method that can query for the newly created user story, and to be more safe we need to match the title with the gui title
+
+                myAttachment["Content"] = myAttachmentContentRef;
+                myAttachment["Name"] = "AttachmentFromREST.png";
+                myAttachment["Description"] = "Attachment Desc";
+                myAttachment["ContentType"] = "image/png";
+                myAttachment["Size"] = imageNumberBytes;
+
+                //create attachment
+                CreateResult myAttachmentCreateResult = _api.Create("Attachment", myAttachment);
+            }
+            catch (WebException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+        
+        #endregion
+
+
+
+    }//class
+}//nameSpace
+
 
 /*
  * <<CleanUP>>
@@ -434,6 +577,4 @@ namespace Rally
  <<Projects>>
  -Create a user Story and a task at the same time
  */
-
-
 

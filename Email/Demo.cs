@@ -7,8 +7,7 @@ namespace Email
         static void Main(string[] args)
         {
             EmailOperation operation = new EmailOperation();
-            operation.markHeaderObjAsUnread();
-                
+            operation.dowloadAttachments();
             Console.ReadLine();
         }
     }

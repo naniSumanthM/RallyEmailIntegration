@@ -352,7 +352,6 @@ namespace Email
                     markAsUnreadFlag.Add("SEEN");
                     inbox.RemoveFlags(id, markAsUnreadFlag);
                 }
-
             }
             catch (Imap4Exception ie)
             {
@@ -369,51 +368,70 @@ namespace Email
         }
         #endregion
 
-        //fIX method
-        #region markHeaderobjAsUnread()
+        #region dowloadAttachments()
         /// <summary>
-        /// Method fecthed only the header object and this does not automatically mark the object as read.
-        /// Mark an unread headerObj as read explicitly
+        /// Download all the attchments from an undread email message and store them into a folder
         /// </summary>
-
-        public void markHeaderObjAsUnread()
+        public void dowloadAttachments()
         {
-            Imap4Client client = new Imap4Client();
-            FlagCollection markAsReadFlag = new FlagCollection();
-
+            Imap4Client imap = new Imap4Client();
+            List<Message> unreadAttachments = new List<Message>();
+                        
             try
             {
                 //Authenticate
-                client.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
-                client.Login(Credential.outlookUserName, Credential.outlookPassword);
+                imap.ConnectSsl(Credential.outlookImapHost,Credential.outlookImapPort);
+                imap.Login(Credential.outlookUserName, Credential.outlookPassword);
 
-                //Stage inbox
-                Mailbox inbox = client.SelectMailbox(Credential.inboxFolder);
-                int[] unreadHeaderIDs = inbox.Search(Credential.statusUnseen);
+                Mailbox inbox = imap.SelectMailbox("inbox");
+                int[] unread = inbox.Search("unseen");
+                Console.WriteLine("Unread Messgaes: "+unread.Length);
 
-                Console.WriteLine("Unread Headers: " + unreadHeaderIDs.Length);
-
-                foreach (var item in unreadHeaderIDs)
+                Console.WriteLine("Start");
+                if (unread.Length > 0)
                 {
-                    Header unreadHeader = inbox.Fetch.HeaderObject(unreadHeaderIDs[item]);
-                    markAsReadFlag.Add("READ");
-                    inbox.AddFlags(item, markAsReadFlag);
+                    //fetch each unread message
+                    for (int i = 0; i < unread.Length; i++)
+                    {
+                        Message unreadMessage = inbox.Fetch.MessageObject(unread[i]);
+                        unreadAttachments.Add(unreadMessage);
+                    }
+
+                    //download the attachments and store it in a folder
+                    //cannot attempt to download an attachment for messages that do not contain any attachments.
+                    //need a universal path or some server to store or not just store but copy and paste the attachments
+                    foreach (var attachemntMsg in unreadAttachments)
+                    {
+                        if (attachemntMsg.Attachments.Count > 0)
+                        {
+                            attachemntMsg.Attachments.StoreToFolder("C:\\Users\\maddirsh\\Desktop\\IntegrationService\\Email\\attachments");
+                            //move the mssageObj into processed folder
+                        }
+                        else
+                        {
+                            Console.WriteLine("No attachments for: " + attachemntMsg.Subject);
+                        }
+                    }
                 }
+                else
+                {
+                    Console.WriteLine("No Unread Messages");
+                }                
             }
-            catch (Imap4Exception ex)
+            catch (Imap4Exception ie)
             {
-                Console.WriteLine(ex.StackTrace);
-                Console.WriteLine(ex.Message);
+                Console.WriteLine(string.Format("Imap4 Exception: {0}", ie.Message));
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine(string.Format("Unexpected Exception: {0}"), e.Message);
             }
             finally
             {
-                client.Disconnect();
-
+                imap.Disconnect();
+                unreadAttachments.Clear();
             }
+            Console.WriteLine("End");
         }
         #endregion
     }
@@ -430,7 +448,7 @@ Message object will be needed in some point, |Even though the library marks it a
 
 //iEnumarable
 //Delegates
-//security
+//security - credentials
 
 //Pull attachments from the email server and attach them to a user story
 //Mark as read and unread

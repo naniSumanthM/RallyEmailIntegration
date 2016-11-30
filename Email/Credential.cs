@@ -1,5 +1,4 @@
-﻿
-namespace Email
+﻿namespace Email
 {
     class Credential
     {
@@ -15,6 +14,6 @@ namespace Email
         public const string inboxFolder = "INBOX";
         public const string statusUnseen = "UNSEEN";
         public const string statusAll = "ALL";
-
+        public const string attachmentPath = "C:\\Users\\maddirsh\\Desktop\\IntegrationService\\Email\\attachments";
     }
 }
