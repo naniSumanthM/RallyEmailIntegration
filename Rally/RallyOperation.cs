@@ -1,15 +1,16 @@
 ﻿namespace Rally
 {
+    #region: System Libraries
     using System;
     using System.IO;
-    using Rally.RestApi;
-    using Rally.RestApi.Json;
-    using Rally.RestApi.Response;
+    using RestApi;
+    using RestApi.Json;
+    using RestApi.Response;
     using System.Collections.Generic;
     using System.Net;
     using ActiveUp.Net.Mail;
     using System.Drawing;
-    using System.Linq;
+    #endregion
 
     class RallyOperation
     {
@@ -133,9 +134,9 @@
 
             //fetch data from the story request
             userStoryRequest.Fetch = new List<string>()
-            {
-                RallyField.formattedID, RallyField.nameForWSorUSorTA, RallyField.owner
-            };
+        {
+            RallyField.formattedID, RallyField.nameForWSorUSorTA, RallyField.owner
+        };
 
             try
             {
@@ -182,9 +183,9 @@
 
             //fetch US data in the form of a list
             userStoryRequest.Fetch = new List<string>()
-            {
-                RallyField.formattedID, RallyField.nameForWSorUSorTA, RallyField.capitalTasks, RallyField.estimate, RallyField.state, RallyField.owner
-            };
+        {
+            RallyField.formattedID, RallyField.nameForWSorUSorTA, RallyField.capitalTasks, RallyField.estimate, RallyField.state, RallyField.owner
+        };
 
             //Userstory Query
             userStoryRequest.Query = (new Query(QueryField.lastUpdatDate, Query.Operator.GreaterThan, QueryField.dateGreaterThan));
@@ -363,7 +364,7 @@
         }
         #endregion
 
-        #region: Create US through unread Mail Messages
+        #region: Create US'z through unread Mail Messages
         //testing a list of userstories
         public void UserStorySync(string usWorkspace, string usProject)
         {
@@ -372,6 +373,7 @@
 
             //List to add the unreadMessages
             List<Message> unreadMessageList = new List<Message>();
+            unreadMessageList.Capacity = 25;
 
             //Set up the US
             DynamicJsonObject toCreate = new DynamicJsonObject();
@@ -399,7 +401,8 @@
                         Message msg = inbox.Fetch.MessageObject(unread[i]);
                         unreadMessageList.Add(msg);
                     }
-
+                    
+                    //Create a Rally user story along with the description found from the email
                     for (int i = 0; i < unreadMessageList.Count; i++)
                     {
                         toCreate[RallyField.nameForWSorUSorTA] = (unreadMessageList[i].Subject);
@@ -415,7 +418,81 @@
                 }
                 else
                 {
-                    Console.WriteLine("Unread Email Not-Found");
+                    Console.WriteLine("Unread Email Not-Found!");
+                }
+                Console.WriteLine("End");
+            }
+            catch (WebException)
+            {
+                Console.WriteLine(QueryField.webExceptionMessage);
+            }
+        }
+        #endregion
+
+        #region: Refined UserStory Sync    
+        ///<summary>
+        ///After each email item is moved to the processed folder, it has to be marked as unread for future reference
+        /// </summary>   
+        /// 
+        public void UserStorySyncRefined(string usWorkspace, string usProject)
+        {
+            //Authenticate with Rally
+            this.EnsureRallyIsAuthenticated();
+
+            //List to add the unreadMessages
+            List<Message> unreadMessageList = new List<Message>();
+            unreadMessageList.Capacity = 25;
+
+            //Set up the US
+            DynamicJsonObject toCreate = new DynamicJsonObject();
+            toCreate[RallyField.workSpace] = usWorkspace;
+            toCreate[RallyField.project] = usProject;
+
+            Console.WriteLine("Start");
+            try
+            {
+                //Authenticate with Imap
+                Imap4Client imap = new Imap4Client();
+                imap.ConnectSsl(Outlook.outlookHost, Outlook.outlookPort);
+                imap.Login(Outlook.outlookUsername, Outlook.outlookPassword);
+
+                //setup Imap enviornment
+                Mailbox inbox = imap.SelectMailbox(Outlook.outlookInboxFolder);
+                int[] unread = inbox.Search(Outlook.outlookUnread);
+                Console.WriteLine("Unread Messages: " + unread.Length);
+                FlagCollection markAsUnreadFlag = new FlagCollection();
+
+                if (unread.Length > 0)
+                {
+                    //fetch all the messages and add to the unreadMessageList
+                    for (int i = 0; i < unread.Length; i++)
+                    {
+                        Message msg = inbox.Fetch.MessageObject(unread[i]);
+                        unreadMessageList.Add(msg);
+                    }
+
+                    //Create a Rally user story along with the description found from the email
+                    for (int i = 0; i < unreadMessageList.Count; i++)
+                    {
+                        toCreate[RallyField.nameForWSorUSorTA] = (unreadMessageList[i].Subject);
+                        toCreate[RallyField.description] = (unreadMessageList[i].BodyText.Text);
+                        CreateResult cr = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+                    }
+
+                    //Move Fetched Messages
+                    foreach (var item in unread)
+                    {
+                        markAsUnreadFlag.Add("Seen");
+                        inbox.RemoveFlags(item, markAsUnreadFlag);
+                        inbox.MoveMessage(item, Outlook.outlookProcessedFolder);
+                    }
+                    //TODO: Safer to write another loop and iterate over the procesed folder, but that will crawl
+                    //the entire inbox and mark the read items as unread.
+                    //Need to find a way to say "mark these newly added items as unread - (index[i], recentlyAdded);
+                }
+                else
+                {
+                    Console.WriteLine("Unread Email Not-Found!");
                 }
                 Console.WriteLine("End");
             }
@@ -445,19 +522,19 @@
         }
         #endregion
 
-        #region: create userstory with attachment
+        #region: add an attachment to an existing user story
         ///<summary>
         ///Pushes an attachment file to an existing user story
         /// </summary>
 
-        public void pushAttachmentToUS(string usWorkspace, string usProject)
+        public void addAttachmentToUS(string usWorkspace, string usProject)
         {
             this.EnsureRallyIsAuthenticated();
 
             string storyReference = "https://rally1.rallydev.com/slm/webservice/v2.0/hierarchicalrequirement/70836533324";
-		
+
             //Process - Attaching the image to the user story
-			
+
             // Read In Image Content
             String imageFilePath = "C:\\Users\\maddirsh\\Desktop\\";
             String imageFileName = "web.png";
@@ -476,7 +553,7 @@
 
             try
             {
-                CreateResult myAttachmentContentCreateResult = _api.Create("AttachmentContent", myAttachmentContent); 
+                CreateResult myAttachmentContentCreateResult = _api.Create("AttachmentContent", myAttachmentContent);
                 String myAttachmentContentRef = myAttachmentContentCreateResult.Reference;
                 Console.WriteLine("Created: " + myAttachmentContentRef);
 
@@ -495,17 +572,18 @@
             {
                 Console.WriteLine("Unhandled exception occurred: " + e.StackTrace);
                 Console.WriteLine(e.Message);
-            }   
+            }
         }
         #endregion
 
         #region: create userStory with attachment
         ///<summary>
-        ///Method that creates a user story with an attachment
+        ///Method that creates a user story with an attachment (takes only 1 png attachment)
         /// </summary>
 
         public void createUsWithAttachment(string workspace, string project, string userStoryName, string userStoryDescription)
         {
+            //Authentication
             this.EnsureRallyIsAuthenticated();
 
             //UserStory Setup
@@ -515,7 +593,7 @@
             toCreate[RallyField.nameForWSorUSorTA] = userStoryName;
             toCreate[RallyField.description] = userStoryDescription;
 
-            //get the image reference - assume that this is where the image lives after being downloaded from Outlook
+            //get the image reference - assume that this is where the image lives in respect to the path after being pulled from outlook
             String imageFilePath = "C:\\Users\\maddirsh\\Desktop\\";
             String imageFileName = "web.png";
             String fullImageFile = imageFilePath + imageFileName;
@@ -529,7 +607,7 @@
 
             // DynamicJSONObject for AttachmentContent
             DynamicJsonObject myAttachmentContent = new DynamicJsonObject();
-            myAttachmentContent["Content"] = imageBase64String;
+            myAttachmentContent[RallyField.content] = imageBase64String;
 
             try
             {
@@ -537,44 +615,43 @@
                 CreateResult createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
 
                 //create attachment
-                CreateResult myAttachmentContentCreateResult = _api.Create("AttachmentContent", myAttachmentContent);
+                CreateResult myAttachmentContentCreateResult = _api.Create(RallyField.attachmentContent, myAttachmentContent);
                 String myAttachmentContentRef = myAttachmentContentCreateResult.Reference;
-                Console.WriteLine("Created: " + myAttachmentContentRef);
 
                 // DynamicJSONObject for Attachment Container
                 DynamicJsonObject myAttachment = new DynamicJsonObject();
-                //myAttachment["Artifact"] = ; //need to get the reference to the userstory --problem is I am wondering if all this can be done in one step
-                //Or else we need to again write a method that can query for the newly created user story, and to be more safe we need to match the title with the gui title
+                myAttachment[RallyField.artifact] = createUserStory.Reference;
+                myAttachment[RallyField.content] = myAttachmentContentRef;
+                myAttachment[RallyField.nameForWSorUSorTA] = "AttachmentFromREST.png";
+                myAttachment[RallyField.description] = "Email Attachment";
+                myAttachment[RallyField.contentType] = "image/png"; //Method to identify the fileTyp .java
+                myAttachment[RallyField.size] = imageNumberBytes;
 
-                myAttachment["Content"] = myAttachmentContentRef;
-                myAttachment["Name"] = "AttachmentFromREST.png";
-                myAttachment["Description"] = "Attachment Desc";
-                myAttachment["ContentType"] = "image/png";
-                myAttachment["Size"] = imageNumberBytes;
-
-                //create attachment
-                CreateResult myAttachmentCreateResult = _api.Create("Attachment", myAttachment);
+                //create & associate the attachment
+                CreateResult myAttachmentCreateResult = _api.Create(RallyField.attachment, myAttachment);
+                Console.WriteLine("Created User Story: "+ createUserStory.Reference);
             }
             catch (WebException e)
             {
                 Console.WriteLine(e.Message);
             }
         }
-        
+
         #endregion
 
+        #region: Add a list of attachments and create a user story
+        ///<summary>
+        ///Create a user story and populate it with a list of attachments
+        /// </summary>
+
+        public void createUsWithAttachmentList(string workspace, string project, string userStoryName, string userStoryDescription)
+        {
 
 
-    }//class
-}//nameSpace
 
+        }
+        #endregion
 
-/*
- * <<CleanUP>>
- Constants
- Checks on the getters and setters
-
- <<Projects>>
- -Create a user Story and a task at the same time
- */
+    }
+}
 
