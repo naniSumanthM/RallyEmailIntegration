@@ -595,7 +595,7 @@
 
             //get the image reference - assume that this is where the image lives in respect to the path after being pulled from outlook
             String imageFilePath = "C:\\Users\\maddirsh\\Desktop\\";
-            String imageFileName = "web.png";
+            String imageFileName = "webException.png";
             String fullImageFile = imageFilePath + imageFileName;
             Image myImage = Image.FromFile(fullImageFile);
 
@@ -624,7 +624,7 @@
                 myAttachment[RallyField.content] = myAttachmentContentRef;
                 myAttachment[RallyField.nameForWSorUSorTA] = "AttachmentFromREST.png";
                 myAttachment[RallyField.description] = "Email Attachment";
-                myAttachment[RallyField.contentType] = "image/png"; //Method to identify the fileTyp .java
+                myAttachment[RallyField.contentType] = "image/png"; //Method to identify the fileType.java
                 myAttachment[RallyField.size] = imageNumberBytes;
 
                 //create & associate the attachment
@@ -639,19 +639,80 @@
 
         #endregion
 
-        #region: Add a list of attachments and create a user story
-        ///<summary>
-        ///Create a user story and populate it with a list of attachments
+        #region: multipleAttachments
+        /// <summary>
+        /// Method that can attach multiple attachments to a user story
         /// </summary>
+        /// <param name="workspace"></param>
+        /// <param name="project"></param>
+        /// <param name="userStoryName"></param>
+        /// <param name="userStoryDescription"></param>
 
-        public void createUsWithAttachmentList(string workspace, string project, string userStoryName, string userStoryDescription)
+
+        public void userStoryWithMultipleAttachments(string workspace, string project, string userStoryName, string userStoryDescription)
         {
+            //Authentication
+            this.EnsureRallyIsAuthenticated();
 
+            //UserStory Setup
+            DynamicJsonObject toCreate = new DynamicJsonObject();
+            toCreate[RallyField.workSpace] = workspace;
+            toCreate[RallyField.project] = project;
+            toCreate[RallyField.nameForWSorUSorTA] = userStoryName;
+            toCreate[RallyField.description] = userStoryDescription;
 
+            Dictionary<string, int> imageD = new Dictionary<string, int>();
+            Image myImage;
+            string base64ImageString;
+            int imageByteSize = 0;
+            string myAttachmentContentRef;
+            DynamicJsonObject myAttachmentContent = new DynamicJsonObject();
+            DynamicJsonObject myAttachmentContainer = new DynamicJsonObject();
 
+            string[] filePaths = Directory.GetFiles("C:\\Users\\maddirsh\\Desktop\\RallyAttachments");
+
+            foreach (string filePath in filePaths)
+            {
+                myImage = Image.FromFile(filePath);
+                base64ImageString = imageToBase64(myImage, System.Drawing.Imaging.ImageFormat.Png);
+                imageByteSize = Convert.FromBase64String(base64ImageString).Length;
+                imageD.Add(base64ImageString, imageByteSize);
+                Console.WriteLine(filePath);
+            }
+
+            //Create US
+            CreateResult createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+  
+            foreach (KeyValuePair<string, int> imagepair in imageD)
+            {
+                try
+                {
+                    myAttachmentContent[RallyField.content] = imagepair.Key;
+
+                    CreateResult myAttachmentContentCreateResult = _api.Create(RallyField.attachmentContent, myAttachmentContent);
+                    myAttachmentContentRef = myAttachmentContentCreateResult.Reference;
+
+                    myAttachmentContainer[RallyField.artifact] = createUserStory.Reference;
+                    myAttachmentContainer[RallyField.content] = myAttachmentContentRef;
+                    myAttachmentContainer[RallyField.nameForWSorUSorTA] = "AttachmentFromREST.png";
+                    myAttachmentContainer[RallyField.description] = "Email Attachment";
+                    myAttachmentContainer[RallyField.contentType] = "image/png";
+                    myAttachmentContainer[RallyField.size] = imagepair.Value;
+
+                    //create & associate the attachment
+                    CreateResult myAttachmentCreateResult = _api.Create(RallyField.attachment, myAttachmentContainer);
+                    Console.WriteLine("Created User Story: " + createUserStory.Reference);
+
+                }
+                catch (WebException e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+            }
+
+            
         }
         #endregion
-
     }
 }
 
