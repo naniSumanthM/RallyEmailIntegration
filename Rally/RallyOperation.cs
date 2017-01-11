@@ -410,7 +410,8 @@
                         CreateResult cr = _api.Create(RallyField.hierarchicalRequirement, toCreate);
                     }
 
-                    //Move Fetched Messages
+                    //Move Fetched Messages into the processed folder
+                    //Maybe mark them as unread, if a developer wants to still examine an email for further clarity
                     foreach (var item in unread)
                     {
                         inbox.MoveMessage(item, Outlook.outlookProcessedFolder);
@@ -487,7 +488,7 @@
                         inbox.MoveMessage(item, Outlook.outlookProcessedFolder);
                     }
                     //TODO: Safer to write another loop and iterate over the procesed folder, but that will crawl
-                    //the entire inbox and mark the read items as unread.
+                    //the entire inbox and mark the already read items as unread.
                     //Need to find a way to say "mark these newly added items as unread - (index[i], recentlyAdded);
                 }
                 else
@@ -576,7 +577,7 @@
         }
         #endregion
 
-        #region: create userStory with attachment
+        #region: create userStory with single attachment
         ///<summary>
         ///Method that creates a user story with an attachment (takes only 1 png attachment)
         /// </summary>
@@ -622,7 +623,7 @@
                 DynamicJsonObject myAttachment = new DynamicJsonObject();
                 myAttachment[RallyField.artifact] = createUserStory.Reference;
                 myAttachment[RallyField.content] = myAttachmentContentRef;
-                myAttachment[RallyField.nameForWSorUSorTA] = "AttachmentFromREST.png";
+                myAttachment[RallyField.nameForWSorUSorTA] = "fileName"; //method to get the fileName from the attached documents
                 myAttachment[RallyField.description] = "Email Attachment";
                 myAttachment[RallyField.contentType] = "image/png"; //Method to identify the fileType.java
                 myAttachment[RallyField.size] = imageNumberBytes;
@@ -639,7 +640,7 @@
 
         #endregion
 
-        #region: multipleAttachments
+        #region: create userStory with multiple attachments, of a single type of file
         /// <summary>
         /// Method that can attach multiple attachments to a user story
         /// </summary>
@@ -647,7 +648,6 @@
         /// <param name="project"></param>
         /// <param name="userStoryName"></param>
         /// <param name="userStoryDescription"></param>
-
 
         public void userStoryWithMultipleAttachments(string workspace, string project, string userStoryName, string userStoryDescription)
         {
@@ -661,7 +661,7 @@
             toCreate[RallyField.nameForWSorUSorTA] = userStoryName;
             toCreate[RallyField.description] = userStoryDescription;
 
-            Dictionary<string, int> imageD = new Dictionary<string, int>();
+            Dictionary <string, int> imageDictionary = new Dictionary <string, int>();
             Image myImage;
             string base64ImageString;
             int imageByteSize = 0;
@@ -673,31 +673,31 @@
 
             foreach (string filePath in filePaths)
             {
-                myImage = Image.FromFile(filePath);
+                myImage = Image.FromFile(filePath); //alternative to .x files
                 base64ImageString = imageToBase64(myImage, System.Drawing.Imaging.ImageFormat.Png);
                 imageByteSize = Convert.FromBase64String(base64ImageString).Length;
-                imageD.Add(base64ImageString, imageByteSize);
+                imageDictionary.Add(base64ImageString, imageByteSize);
                 Console.WriteLine(filePath);
             }
 
-            //Create US
+            //Create US - this line creates the userstory
             CreateResult createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
   
-            foreach (KeyValuePair<string, int> imagepair in imageD)
+            foreach (KeyValuePair<string, int> imagePair in imageDictionary)
             {
                 try
                 {
-                    myAttachmentContent[RallyField.content] = imagepair.Key;
+                    myAttachmentContent[RallyField.content] = imagePair.Key;
 
                     CreateResult myAttachmentContentCreateResult = _api.Create(RallyField.attachmentContent, myAttachmentContent);
                     myAttachmentContentRef = myAttachmentContentCreateResult.Reference;
 
-                    myAttachmentContainer[RallyField.artifact] = createUserStory.Reference;
-                    myAttachmentContainer[RallyField.content] = myAttachmentContentRef;
-                    myAttachmentContainer[RallyField.nameForWSorUSorTA] = "AttachmentFromREST.png";
+                    myAttachmentContainer[RallyField.artifact] = createUserStory.Reference; //say this attachment is linked to this user story
+                    myAttachmentContainer[RallyField.content] = myAttachmentContentRef; //passing the reference of the attachment to the container
+                    myAttachmentContainer[RallyField.nameForWSorUSorTA] = "AttachmentFromREST.png"; //changing the file name of the attachment
                     myAttachmentContainer[RallyField.description] = "Email Attachment";
-                    myAttachmentContainer[RallyField.contentType] = "image/png";
-                    myAttachmentContainer[RallyField.size] = imagepair.Value;
+                    myAttachmentContainer[RallyField.contentType] = "image/png"; //contentType
+                    myAttachmentContainer[RallyField.size] = imagePair.Value;
 
                     //create & associate the attachment
                     CreateResult myAttachmentCreateResult = _api.Create(RallyField.attachment, myAttachmentContainer);
@@ -709,10 +709,187 @@
                     Console.WriteLine(e.Message);
                 }
             }
-
-            
         }
         #endregion
+
+        #region: Create a user story with a diverse set of attachments 
+        ///<summary>
+        ///Method uploads a diverse colelction of attachments and links it to a newly created user story
+        /// </summary>
+
+        public void uploadDiverseAttachments(string worskpace, string project, string userStoryName)
+        {
+            List<string> base64EncodedAttachmentList = new List<string>();
+            List<string> attachmentFileNamesList = new List<string>();
+            DynamicJsonObject attachmentContent = new DynamicJsonObject();
+            DynamicJsonObject attachmentContainer = new DynamicJsonObject();
+
+            string[] attachmentPaths = Directory.GetFiles("C:\\Users\\maddirsh\\Desktop\\diverseAttachments");
+            Byte[] attachmentBytes;
+            string base64EncodedString;
+            string attachmentFileName;
+
+            string attachmentContentReference = "";
+
+            //Authentication
+            this.EnsureRallyIsAuthenticated();
+
+            //US setup
+            DynamicJsonObject toCreate = new DynamicJsonObject();
+            toCreate[RallyField.workSpace] = worskpace;
+            toCreate[RallyField.project] = project;
+            toCreate[RallyField.nameForWSorUSorTA] = userStoryName;
+            
+            foreach (string attachment in attachmentPaths)
+            {
+                //convert each file to base 64 string and populate the list
+                attachmentBytes = File.ReadAllBytes(attachment);
+                base64EncodedString = Convert.ToBase64String(attachmentBytes);
+                base64EncodedAttachmentList.Add(base64EncodedString);
+
+                //Acquire the file name for each file in the directory and populate the list with the fileNames
+                attachmentFileName = Path.GetFileName(attachment);
+                attachmentFileNamesList.Add(attachmentFileName);
+                Console.WriteLine(attachmentFileName);
+            }
+
+            //Create the user story
+            CreateResult createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+            CreateResult attachmentCreateResult;
+            CreateResult myAttachmentCreateResult;
+
+
+            foreach (string encodedAttachment in base64EncodedAttachmentList)
+            {
+                try
+                {
+                    attachmentContent[RallyField.content] = encodedAttachment;
+                    attachmentCreateResult = _api.Create(RallyField.attachmentContent, attachmentContent);
+                    attachmentContentReference = attachmentCreateResult.Reference;
+                }
+                catch (WebException e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+            }
+
+            foreach (string fileName in attachmentFileNamesList)
+            {
+                attachmentContainer[RallyField.artifact] = createUserStory.Reference;
+                attachmentContainer[RallyField.content] = attachmentContentReference;
+                attachmentContainer[RallyField.nameForWSorUSorTA] = fileName;
+                attachmentContainer[RallyField.description] = "Email Attachment";
+                attachmentContainer[RallyField.contentType] = "file/";
+
+                //Create & associate the attachment to the user story created earlier
+                myAttachmentCreateResult = _api.Create(RallyField.attachment, attachmentContainer);
+                Console.WriteLine("Created User Story: " + createUserStory.Reference);
+            }
+
+            #region comment
+            //Byte[] attachmentBytes;
+            //string base64EncodedString;
+            //int attachmentByteSize = 0;
+            //int indexOfDot;
+
+            //Dictionary<string, int> attachmentDictionary = new Dictionary<string, int>();
+            //string[] filePaths = Directory.GetFiles(directoryPath);
+
+            ////iterate over each DIVERSE file in the directory
+            //foreach (string extension in filePaths)
+            //{
+            //    //Encode each file to a base 64 string
+            //    attachmentBytes = File.ReadAllBytes(extension);
+            //    base64EncodedString = Convert.ToBase64String(attachmentBytes);
+            //    attachmentByteSize = Convert.FromBase64String(base64EncodedString).Length;
+
+            //    //Adding each unqiue <base64EncodedString, byteSize> to a Dictionary
+            //    attachmentDictionary.Add(base64EncodedString, attachmentByteSize);
+
+            //    //get the attachment file type
+            //    //indexOfDot = extension.LastIndexOf(".");
+            //    //Console.WriteLine(extension.Substring(indexOfDot+1));
+            //}
+
+            //foreach (KeyValuePair<string, int> attachment in attachmentDictionary)
+            //{
+            //    Console.WriteLine("64Encoded String: "+attachment.Key + Environment.NewLine +"Bytes Size: "+ attachment.Value);
+            //}
+
+
+            //loop through and get all the file names that live in the directory
+            //string directoryPath = "C:\\Users\\maddirsh\\Desktop\\diverseAttachments";
+            //string[] filePaths = Directory.GetFiles(directoryPath);
+
+            //foreach (string fileName in filePaths)
+            //{
+            //    Console.WriteLine(Path.GetFileName(fileName));
+            //}
+            #endregion
+        }
+        #endregion
+
+        #region: forFun
+        //Curios: content type experiment
+        public void forFun(string workspace, string project, string userStoryName)
+        {
+            //local variables
+            Byte[] attachmentBytes;
+            string base64String;
+            int attachmentByteSize = 0;
+
+            //Authentication
+            this.EnsureRallyIsAuthenticated();
+
+            //UserStory Setup
+            DynamicJsonObject toCreate = new DynamicJsonObject();
+            toCreate[RallyField.workSpace] = workspace;
+            toCreate[RallyField.project] = project;
+            toCreate[RallyField.nameForWSorUSorTA] = userStoryName;
+
+            //get the image reference - assume that this is where the image lives in respect to the path after being pulled from outlook
+            String attachmentPath = "C:\\Users\\maddirsh\\Desktop\\diverseAttachments\\multipleAttachments.cs";
+
+            //convert the .SQL file to a base 64 encoded string
+            attachmentBytes = File.ReadAllBytes(attachmentPath);
+            base64String = Convert.ToBase64String(attachmentBytes);
+            attachmentByteSize = Convert.FromBase64String(base64String).Length;
+
+
+            // DynamicJSONObject for AttachmentContent
+            DynamicJsonObject myAttachmentContent = new DynamicJsonObject();
+            myAttachmentContent[RallyField.content] = base64String;
+
+            try
+            {
+                //create user story
+                CreateResult createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+
+                //create attachment
+                CreateResult myAttachmentContentCreateResult = _api.Create(RallyField.attachmentContent, myAttachmentContent);
+                String myAttachmentContentRef = myAttachmentContentCreateResult.Reference;
+
+                // DynamicJSONObject for Attachment Container - Shipping Label
+                DynamicJsonObject myAttachment = new DynamicJsonObject();
+                myAttachment[RallyField.artifact] = createUserStory.Reference;
+                myAttachment[RallyField.content] = myAttachmentContentRef;
+                myAttachment[RallyField.nameForWSorUSorTA] = "multipleAttachments.cs"; //method to get the fileName from the attached documents
+                myAttachment[RallyField.description] = "Email Attachment";
+                myAttachment[RallyField.contentType] = "file/"; //Method to identify the fileType extension
+                //myAttachment[RallyField.size] = attachmentByteSize;
+
+                //create & associate the attachment
+                CreateResult myAttachmentCreateResult = _api.Create(RallyField.attachment, myAttachment);
+                Console.WriteLine("Created User Story: " + createUserStory.Reference);
+            }
+            catch (WebException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+
+        #endregion
+
     }
 }
 
