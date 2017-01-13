@@ -19,11 +19,8 @@ namespace Rally
             //operation.UserStorySync(QueryField.WS_zScratch, QueryField.ST_SampleProject);
             #endregion
 
-            //operation.createUsWithAttachment(QueryField.WS_zScratch, QueryField.ST_SampleProject, "AttachmentFileName", "No (.) for file name");
-            //operation.userStoryWithMultipleAttachments(QueryField.WS_zScratch, QueryField.ST_SampleProject, "multiAttachemnt3", "The attachment needs to be created for how many ever files there are in the folder");
-            //operation.forFun(QueryField.WS_zScratch, QueryField.ST_SampleProject, "attachmentTesting1");
-
-            operation.uploadDiverseAttachments(QueryField.WS_zScratch, QueryField.ST_SampleProject, "diverse attachment run");
+            operation.addAttachments(QueryField.WS_zScratch, QueryField.ST_SampleProject, "diverse_attachment_run_pt2");
+            
             Console.ReadLine();
         }
     }

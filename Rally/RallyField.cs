@@ -39,5 +39,9 @@ namespace Rally
         //Login fields
         public const string userName = "maddirsh@mail.uc.edu";
         public const string password = "iYmcmb24";
+
+        //Attachment Constants
+        public const string emailAttachment = "Email Attachment";
+
     }
 }
