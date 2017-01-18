@@ -803,12 +803,87 @@
         /// (string base64EncodedString, string fileName)
         /// </summary>
 
-        public void reallyAvoidDuplicates()
+        public void reallyAvoidDuplicates(string workspace, string project, string userstoryName)
         {
+            //Dictionary Object to hold each attachments base64EncodedString and its fileName
+            Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
 
+            //Objects to support attachment specifics
+            DynamicJsonObject attachmentContent = new DynamicJsonObject();
+            DynamicJsonObject attachmentContainer = new DynamicJsonObject();
+
+            //Objects that helps create the a) user story, b) attachment content, c) attachment container
+            CreateResult createUserStory;
+            CreateResult attachmentContentCreateResult;
+            CreateResult attachmentContainerCreateResult;
+
+            //base 64 conversion variables
+            string attachmentFilePath = "C:\\Users\\maddirsh\\Desktop\\diverseAttachments";
+            string[] attachmentPaths = Directory.GetFiles(attachmentFilePath);
+            string base64EncodedString;
+            string attachmentFileName;
+            string attachmentContentReference = "";
+            int attachmentCount = 0;
+
+            //Rally Authentication
+            this.EnsureRallyIsAuthenticated();
+
+            //User story creation and set up
+            DynamicJsonObject toCreate = new DynamicJsonObject();
+            toCreate[RallyField.workSpace] = workspace;
+            toCreate[RallyField.project] = project;
+            toCreate[RallyField.nameForWSorUSorTA] = userstoryName;
+            createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+
+            foreach (string attachment in attachmentPaths)
+            {
+                //Base 64 conversion process
+                attachmentFileName = Path.GetFileName(attachment);
+                base64EncodedString = fileToBase64(attachment);
+                var filename = string.Empty;
+
+                if (!(attachmentsDictionary.TryGetValue(base64EncodedString, out filename)))
+                {
+                    //base64EncodedString does not exist
+                    //Populate the dictionary
+                    attachmentsDictionary.Add(base64EncodedString, attachmentFileName);
+                }
+                else
+                {
+                    //Does exist so do not populate
+                    Console.WriteLine("Duplicate file exists for: "+attachmentFileName);
+                }
+            }
+
+            //iterate over the populated dictionary and upload each attachment to the respective user story
+            foreach (KeyValuePair<string, string> attachmentPair in attachmentsDictionary)
+            {
+                try
+                {
+                    //create attachment content
+                    attachmentContent[RallyField.content] = attachmentPair.Key;
+                    attachmentContentCreateResult = _api.Create(RallyField.attachmentContent, attachmentContent);
+                    attachmentContentReference = attachmentContentCreateResult.Reference;
+
+                    //create attachment contianer
+                    attachmentContainer[RallyField.artifact] = createUserStory.Reference;
+                    attachmentContainer[RallyField.content] = attachmentContentReference;
+                    attachmentContainer[RallyField.nameForWSorUSorTA] = attachmentPair.Value;
+                    attachmentContainer[RallyField.description] = RallyField.emailAttachment;
+                    attachmentContainer[RallyField.contentType] = "file/";
+
+                    //Create & associate the attachment
+                    attachmentContainerCreateResult = _api.Create(RallyField.attachment, attachmentContainer);
+                    attachmentCount++;
+                }
+                catch (WebException e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+            }
+
+            Console.WriteLine(attachmentCount + " Attachments Pushed...");
         } 
-
-
 
         #endregion
 
@@ -819,27 +894,33 @@
             Dictionary<string, string> d = new Dictionary<string, string>();
 
             string[] attachmentPaths = Directory.GetFiles("C:\\Users\\maddirsh\\Desktop\\diverseAttachments");
+            Byte[] attachmentBytes;
             string base64EncodedString;
             string attachmentFileName;
 
             foreach (string attachment in attachmentPaths)
             {
-                base64EncodedString = fileToBase64(attachment);
+                //Base 64 conversion process
+                attachmentBytes = File.ReadAllBytes(attachment);
+                base64EncodedString = Convert.ToBase64String(attachmentBytes);
                 attachmentFileName = Path.GetFileName(attachment);
+                var filename = string.Empty;
 
-                if (d.ContainsKey(attachmentFileName))
+                if (d.TryGetValue(base64EncodedString, out filename))
                 {
-                    Console.WriteLine("exists, so not adding");
-                    //trying to get a value for a key that does not exist
+                    Console.WriteLine("exists");
+                    //trying to get a value for a key that does not exist, on the first iteration, then the compiler jumps to the else{}
                 }
                 else
                 {
                     Console.WriteLine("!exists");
-                    d.Add(attachmentFileName, base64EncodedString);
-                    Console.WriteLine("ADDING");
+                    //Since the <key, value> does not exist, go ahead and populate the dictionary
+                    d.Add(base64EncodedString, attachmentFileName);
                 }
             }
 
+            //Print out the key value pair.
+            //The value is not being printed.
             foreach (KeyValuePair<string, string> pair in d)
             {
                 Console.WriteLine("Key: " + pair.Key + " " + "Value: " + pair.Value);
@@ -885,7 +966,6 @@
 
             string output = (fileACode.Equals(fileBCode)) ? "Match" : "Do not Match";
             Console.WriteLine(output);
-
         } 
         #endregion
     }

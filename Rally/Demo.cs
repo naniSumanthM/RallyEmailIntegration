@@ -20,8 +20,10 @@ namespace Rally
             #endregion
 
             //operation.addAttachmentsEliminateDuplicates(QueryField.WS_zScratch, QueryField.ST_SampleProject, "Duplicates allowed");
-            operation.testBase64();
-
+            operation.reallyAvoidDuplicates(QueryField.WS_zScratch, QueryField.ST_SampleProject, "Filter Duplicate Attachments");
+            
+            
+            //operation.dTest();
             Console.ReadLine();
         }
     }
