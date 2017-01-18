@@ -19,8 +19,9 @@ namespace Rally
             //operation.UserStorySync(QueryField.WS_zScratch, QueryField.ST_SampleProject);
             #endregion
 
-            operation.addAttachments(QueryField.WS_zScratch, QueryField.ST_SampleProject, "diverse_attachment_run_pt2");
-            
+            //operation.addAttachmentsEliminateDuplicates(QueryField.WS_zScratch, QueryField.ST_SampleProject, "Duplicates allowed");
+            operation.testBase64();
+
             Console.ReadLine();
         }
     }

@@ -513,40 +513,6 @@
         }
         #endregion
 
-        #region: test base64String
-        /// <summary>
-        /// Test to see if two file names of the same content, but with different fileNames have the same base 64 Encoded string
-        /// </summary>
-        /// <param name="fileA"></param>
-        /// <param name="fileB"></param>
-
-        public void base64Equality(string fileA, string fileB)
-        {
-            Byte[] fileABytes;
-            Byte[] fileBBytes;
-            string A = fileA;
-            string B = fileB;
-
-            //convert both the strings into base 64 and check for comparision
-
-            fileABytes = File.ReadAllBytes(A);
-            fileBBytes = File.ReadAllBytes(B);
-
-            A = Convert.ToBase64String(fileABytes);
-            B = Convert.ToBase64String(fileBBytes);
-
-            if (A == B)
-            {
-                Console.WriteLine("true");
-            }
-            else
-            {
-                Console.WriteLine("false");
-            }
-
-        }
-        #endregion
-
         #region: add an attachment to a an existing user story reference
         ///<summary>
         ///Pushes an attachment file to an existing user story
@@ -687,7 +653,6 @@
 
             //base 64 conversion variables
             string[] attachmentPaths = Directory.GetFiles("C:\\Users\\maddirsh\\Desktop\\diverseAttachments");
-            Byte[] attachmentBytes;
             string base64EncodedString;
             string attachmentFileName;
             string attachmentContentReference = "";
@@ -706,8 +671,7 @@
             foreach (string attachment in attachmentPaths)
             {
                 //Base 64 conversion process
-                attachmentBytes = File.ReadAllBytes(attachment);
-                base64EncodedString = Convert.ToBase64String(attachmentBytes);
+                base64EncodedString = fileToBase64(attachment);
                 attachmentFileName = Path.GetFileName(attachment);
 
                 //Populate the Dictionary
@@ -743,8 +707,187 @@
             }
         }
 
-        #endregion: 
+        #endregion
 
+        #region: avoidDuplicateAttachments
+        ///<summary>
+        ///Link attachments to a user story, ELIMINATING THE IDEA OF DUPLICATE FILES.
+        ///When someone does attach the same file twice, the download will not accept fileNames with the same fileName
+        ///Dictionary <fileName.extension...fileBase64String>
+        /// </summary>
+
+        public void addAttachmentsEliminateDuplicates(string workspace, string project, string userstoryName)
+        {
+            //Dictionary Object to hold each attachments base64EncodedString and its fileName
+            Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
+
+            //Objects to support attachment specifics
+            DynamicJsonObject attachmentContent = new DynamicJsonObject();
+            DynamicJsonObject attachmentContainer = new DynamicJsonObject();
+
+            //Objects that helps create the a) user story, b) attachment content, c) attachment container
+            CreateResult createUserStory;
+            CreateResult attachmentContentCreateResult;
+            CreateResult attachmentContainerCreateResult;
+
+            //base 64 conversion variables
+            string attachmentFilePath = "C:\\Users\\maddirsh\\Desktop\\diverseAttachments";
+            string[] attachmentPaths = Directory.GetFiles(attachmentFilePath);
+            string base64EncodedString;
+            string attachmentFileName;
+            string attachmentContentReference = "";
+
+            //Rally Authentication
+            this.EnsureRallyIsAuthenticated();
+
+            //User story creation and set up
+            DynamicJsonObject toCreate = new DynamicJsonObject();
+            toCreate[RallyField.workSpace] = workspace;
+            toCreate[RallyField.project] = project;
+            toCreate[RallyField.nameForWSorUSorTA] = userstoryName;
+            createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+
+            //iterate over each filePath and a) convert to base 64, b) get the fileName.extension, c)Add to the dictionary object
+            foreach (string attachment in attachmentPaths)
+            {
+                //Base 64 conversion process
+                attachmentFileName = Path.GetFileName(attachment);
+                base64EncodedString = fileToBase64(attachment);
+
+                //Populate the Dictionary
+                if (attachmentsDictionary.ContainsKey(attachmentFileName))
+                {
+                    Console.WriteLine("exists, so not adding");
+                    //trying to get a value for a key that does not exist
+                }
+                else
+                {
+                    Console.WriteLine("dOES NOT exist");
+                    attachmentsDictionary.Add(attachmentFileName, base64EncodedString);
+                    Console.WriteLine("ADDING");
+                }
+            }
+
+            //iterate over the populated dictionary and upload each attachment to the respective user story
+            foreach (KeyValuePair<string, string> attachmentPair in attachmentsDictionary)
+            {
+                try
+                {
+                    //create attachment content
+                    attachmentContent[RallyField.content] = attachmentPair.Value;
+                    attachmentContentCreateResult = _api.Create(RallyField.attachmentContent, attachmentContent);
+                    attachmentContentReference = attachmentContentCreateResult.Reference;
+
+                    //create attachment contianer
+                    attachmentContainer[RallyField.artifact] = createUserStory.Reference;
+                    attachmentContainer[RallyField.content] = attachmentContentReference;
+                    attachmentContainer[RallyField.nameForWSorUSorTA] = attachmentPair.Key;
+                    attachmentContainer[RallyField.description] = RallyField.emailAttachment;
+                    attachmentContainer[RallyField.contentType] = "file/";
+
+                    //Create & associate the attachment
+                    attachmentContainerCreateResult = _api.Create(RallyField.attachment, attachmentContainer);
+                    Console.WriteLine("Created User Story: " + createUserStory.Reference);
+                }
+                catch (WebException e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+            }
+        }
+        #endregion
+
+        #region: reallyAvoidDuplicates
+        /// <summary>
+        /// Use tryGetValue to identify duplicate file content with different file names
+        /// (string base64EncodedString, string fileName)
+        /// </summary>
+
+        public void reallyAvoidDuplicates()
+        {
+
+        } 
+
+
+
+        #endregion
+
+        #region :testingRegion
+
+        public void dTest()
+        {
+            Dictionary<string, string> d = new Dictionary<string, string>();
+
+            string[] attachmentPaths = Directory.GetFiles("C:\\Users\\maddirsh\\Desktop\\diverseAttachments");
+            string base64EncodedString;
+            string attachmentFileName;
+
+            foreach (string attachment in attachmentPaths)
+            {
+                base64EncodedString = fileToBase64(attachment);
+                attachmentFileName = Path.GetFileName(attachment);
+
+                if (d.ContainsKey(attachmentFileName))
+                {
+                    Console.WriteLine("exists, so not adding");
+                    //trying to get a value for a key that does not exist
+                }
+                else
+                {
+                    Console.WriteLine("!exists");
+                    d.Add(attachmentFileName, base64EncodedString);
+                    Console.WriteLine("ADDING");
+                }
+            }
+
+            foreach (KeyValuePair<string, string> pair in d)
+            {
+                Console.WriteLine("Key: " + pair.Key + " " + "Value: " + pair.Value);
+            }
+
+            #region MyRegion
+
+            ////we have an empty dicitonary, so lets try to get the value of key that IS not part of dictionary
+            //string val = "fileA";
+
+            //if (d.TryGetValue("A", out val))
+            //{
+            //    Console.WriteLine("exists");
+            //    //do not add a key, since the <key ,value> exists
+            //    //so the compiler will always jump to the else, {adding a <key, value>}
+            //}
+            //else
+            //{
+            //    Console.WriteLine("!exists");
+            //    d.Add("A", "fileA");
+            //}
+
+            //foreach (KeyValuePair<string, string> pair in d)
+            //{
+            //    Console.WriteLine("Key: " + pair.Key + " " + "Value: " + pair.Value);
+            //}
+            //Console.WriteLine("Not populated"); 
+
+            //d.Add("A", "fileA");
+            //d.Add("B", "fileB");
+            //d.Add("C", "fileC");
+            //d.Add("D", "fileD");
+            #endregion
+        }
+
+        public void testBase64()
+        {
+            string fileA = "C:\\Users\\maddirsh\\Desktop\\diverseAttachments\\qkjhdpkdwkjxwkjehfiheoihoxow3iouiroxui.txt";
+            string fileB = "C:\\Users\\maddirsh\\Desktop\\diverseAttachments\\txtSample.txt";
+
+            string fileACode = fileToBase64(fileA);
+            string fileBCode = fileToBase64(fileB);
+
+            string output = (fileACode.Equals(fileBCode)) ? "Match" : "Do not Match";
+            Console.WriteLine(output);
+
+        } 
+        #endregion
     }
 }
 
