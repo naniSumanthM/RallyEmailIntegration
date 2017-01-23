@@ -8,22 +8,19 @@ namespace Rally
         {
             RallyOperation operation = new RallyOperation(RallyField.userName, RallyField.password);
 
-            #region: Test Method Calls
-            //operation.CreateUserStory("ListUS", "iterate through list", QueryField.WS_zScratch, QueryField.ST_SampleProject, QueryField.USER_Jostte, QueryField.IT_Iteration, "2");
             //operation.getWorkspaces();
             //operation.getScrumTeams();
             //operation.getUserStories(QueryField.WS_UCIT, QueryField.ST_lotteryWinners);
             //operation.getUSTA(QueryField.WS_UCIT, QueryField.ST_lotteryWinners);
             //operation.CreateTask("RefinedTask", "No more duplication of Authenticate", QueryField.USER_Jostte, "1", QueryField.US_9);
-            //operation.UserStorySyncRefined(QueryField.WS_zScratch, QueryField.ST_SampleProject);
-            //operation.UserStorySync(QueryField.WS_zScratch, QueryField.ST_SampleProject);
-            #endregion
-
             //operation.addAttachmentsEliminateDuplicates(QueryField.WS_zScratch, QueryField.ST_SampleProject, "Duplicates allowed");
-            operation.reallyAvoidDuplicates(QueryField.WS_zScratch, QueryField.ST_SampleProject, "Filter Duplicate Attachments");
+            //operation.addAttachmentsEliminateDuplicatesWithSimilarBase64Strings(QueryField.WS_zScratch, QueryField.ST_SampleProject, "Filter Duplicate Attachments");           
+            //operation.SyncUserStories(QueryField.WS_zScratch, QueryField.ST_SampleProject);
+            //operation.SyncUserStoriesAndLeaveMessageAsUnread(QueryField.WS_zScratch, QueryField.ST_SampleProject);
+            //operation.CreateUserStory("ListUS","Description testing with images that maybe copied and pasted", QueryField.WS_zScratch, QueryField.ST_SampleProject, QueryField.USER_Jostte, QueryField.IT_Iteration, "2");
             
-            
-            //operation.dTest();
+            operation.SyncUserStoriesWithAttachments(QueryField.WS_zScratch, QueryField.ST_SampleProject);
+
             Console.ReadLine();
         }
     }

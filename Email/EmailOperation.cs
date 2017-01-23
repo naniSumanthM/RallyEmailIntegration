@@ -69,7 +69,7 @@ namespace Email
 
                 //Stage the enviornment
                 Mailbox inbox = client.SelectMailbox("INBOX");
-                int[] unread = inbox.Search("UNSEEN");
+                int[] unread = inbox.Search("UNSEEN"); //returns an int of the number of unread email objects, given an inbox
                 Console.WriteLine("Unread Messages: " + unread.Length);
 
                 if (unread.Length > 0)
@@ -280,7 +280,7 @@ namespace Email
                     for (int i = 0; i < unread.Length; i++)
                     {
                         Message msg = inbox.Fetch.MessageObject(unread[i]);
-                        //explicitly mark as read for each email obejct
+                        //explicitly mark as read for each email obejct?? - but the action of fetching does that for us
                         unreadList.Add(msg);
                     }
 
@@ -288,7 +288,7 @@ namespace Email
                     foreach (var item in unreadList)
                     {
                         Console.WriteLine(item.Subject);
-                        //Console.WriteLine(item.BodyText.Text);
+                      //Console.WriteLine(item.BodyText.Text);
                     }
 
                     //Move messages to the processed folder
@@ -345,12 +345,12 @@ namespace Email
 
                 Console.WriteLine("Message-Count: " + allMessages.Length);
 
-                //Itearate through and 
+                //Itearate and mark each mail object as unread
                 foreach (var id in allMessages)
                 {
                     Message msg = inbox.Fetch.MessageObject(id);
-                    markAsUnreadFlag.Add("SEEN");
-                    inbox.RemoveFlags(id, markAsUnreadFlag);
+                    markAsUnreadFlag.Add("SEEN"); //adding all the read email objects to the flag collection
+                    inbox.RemoveFlags(id, markAsUnreadFlag); //then removing the flags, making each mail object as unread
                 }
             }
             catch (Imap4Exception ie)
@@ -376,16 +376,16 @@ namespace Email
         {
             Imap4Client imap = new Imap4Client();
             List<Message> unreadAttachments = new List<Message>();
-                        
+
             try
             {
                 //Authenticate
-                imap.ConnectSsl(Credential.outlookImapHost,Credential.outlookImapPort);
+                imap.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
                 imap.Login(Credential.outlookUserName, Credential.outlookPassword);
 
                 Mailbox inbox = imap.SelectMailbox("inbox");
                 int[] unread = inbox.Search("unseen");
-                Console.WriteLine("Unread Messgaes: "+unread.Length);
+                Console.WriteLine("Unread Messgaes: " + unread.Length);
 
                 Console.WriteLine("Start");
                 if (unread.Length > 0)
@@ -416,7 +416,7 @@ namespace Email
                 else
                 {
                     Console.WriteLine("No Unread Messages");
-                }                
+                }
             }
             catch (Imap4Exception ie)
             {
@@ -443,12 +443,5 @@ namespace Email
 
 Header object when fecthed is quicker, but needs to be marked as read explicitly and then moved to the processed folder
 Message object will be needed in some point, |Even though the library marks it as read| we need to state explicitly to mark it as read 
- 
 */
 
-//iEnumarable
-//Delegates
-//security - credentials
-
-//Pull attachments from the email server and attach them to a user story
-//Mark as read and unread

@@ -15,6 +15,7 @@
     class RallyOperation
     {
         RallyRestApi _api;
+        Imap4Client imap;
         public const string ServerName = RallyField.serverID;
 
         //properties
@@ -37,6 +38,13 @@
             {
                 _api.Authenticate(this.UserName, this.Password, ServerName, null, RallyField.allowSSO);
             }
+        }
+
+        public void EnsureOutlookIsAuthenticated()
+        {
+            imap = new Imap4Client();
+            imap.ConnectSsl(Outlook.outlookHost, Outlook.outlookPort);
+            imap.Login(Outlook.outlookUsername, Outlook.outlookPassword);
         }
 
         #region: Query Workspaces
@@ -366,7 +374,7 @@
 
         #region: Create US'z through unread Mail Messages
         //testing a list of userstories
-        public void UserStorySync(string usWorkspace, string usProject)
+        public void SyncUserStories(string usWorkspace, string usProject)
         {
             //Authenticate with Rally
             this.EnsureRallyIsAuthenticated();
@@ -380,7 +388,7 @@
             toCreate[RallyField.workSpace] = usWorkspace;
             toCreate[RallyField.project] = usProject;
 
-            Console.WriteLine("Start");
+            Console.WriteLine("Starting...");
             try
             {
                 //Authenticate with Imap
@@ -395,14 +403,14 @@
 
                 if (unread.Length > 0)
                 {
-                    //fetch all the messages and add to the unreadMessageList
+                    //fetch all the messages and populate the unreadMessageList with items
                     for (int i = 0; i < unread.Length; i++)
                     {
                         Message msg = inbox.Fetch.MessageObject(unread[i]);
                         unreadMessageList.Add(msg);
                     }
-                    
-                    //Create a Rally user story along with the description found from the email
+
+                    //Create a Rally user story, with a description for each unread email message
                     for (int i = 0; i < unreadMessageList.Count; i++)
                     {
                         toCreate[RallyField.nameForWSorUSorTA] = (unreadMessageList[i].Subject);
@@ -419,9 +427,9 @@
                 }
                 else
                 {
-                    Console.WriteLine("Unread Email Not-Found!");
+                    Console.WriteLine("Unread Email Messages Not Found");
                 }
-                Console.WriteLine("End");
+                Console.WriteLine("Finished...");
             }
             catch (WebException)
             {
@@ -435,7 +443,7 @@
         ///After each email item is moved to the processed folder, it has to be marked as unread for future reference
         /// </summary>   
         /// 
-        public void UserStorySyncRefined(string usWorkspace, string usProject)
+        public void SyncUserStoriesAndLeaveMessageAsUnread(string usWorkspace, string usProject)
         {
             //Authenticate with Rally
             this.EnsureRallyIsAuthenticated();
@@ -484,7 +492,7 @@
                     foreach (var item in unread)
                     {
                         markAsUnreadFlag.Add("Seen");
-                        inbox.RemoveFlags(item, markAsUnreadFlag);
+                        inbox.RemoveFlags(item, markAsUnreadFlag); //removing the seen flag on the email object
                         inbox.MoveMessage(item, Outlook.outlookProcessedFolder);
                     }
                     //TODO: Safer to write another loop and iterate over the procesed folder, but that will crawl
@@ -803,7 +811,7 @@
         /// (string base64EncodedString, string fileName)
         /// </summary>
 
-        public void reallyAvoidDuplicates(string workspace, string project, string userstoryName)
+        public void addAttachmentsEliminateDuplicatesWithSimilarBase64Strings(string workspace, string project, string userstoryName)
         {
             //Dictionary Object to hold each attachments base64EncodedString and its fileName
             Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
@@ -966,8 +974,136 @@
 
             string output = (fileACode.Equals(fileBCode)) ? "Match" : "Do not Match";
             Console.WriteLine(output);
-        } 
+        }
         #endregion
+
+        CreateResult createUserStory;
+
+        public void SyncUserStoriesWithAttachments(string rallyWorkSpace, string rallyProject)
+        {
+            //Variables for method
+            List<Message> unreadMessageList = new List<Message>();
+            Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
+            string[] attachmentPaths = Directory.GetFiles(SyncConstant.attachmentsDirectory);
+            string base64EncodedString;
+            string attachmentFileName;
+            string attachmentContentReference = "";
+            int attachmentCount = 0;
+
+            DynamicJsonObject toCreate = new DynamicJsonObject();
+            DynamicJsonObject attachmentContent = new DynamicJsonObject();
+            DynamicJsonObject attachmentContainer = new DynamicJsonObject();
+
+            CreateResult attachmentContentCreateResult;
+            CreateResult attachmentContainerCreateResult;
+
+            this.EnsureRallyIsAuthenticated();
+            toCreate[RallyField.workSpace] = rallyWorkSpace;
+            toCreate[RallyField.project] = rallyProject;
+
+            Console.WriteLine("Syncing User Stories...");
+
+            try
+            {
+                EnsureOutlookIsAuthenticated();
+                Mailbox inbox = imap.SelectMailbox(Outlook.outlookInboxFolder);
+                int[] unreadIDs = inbox.Search(Outlook.outlookUnread);
+                int unreadIdsLength = unreadIDs.Length;
+                FlagCollection markAsUnreadFlag = new FlagCollection();
+                Console.WriteLine("Unread Mail Messages: " + unreadIdsLength);
+
+                if (unreadIdsLength>0)
+                {
+                    //fetch each message object and populate the list
+                    for (int i = 0; i < unreadIdsLength; i++)
+                    {
+                        Message unreadMessageObject = inbox.Fetch.MessageObject(unreadIDs[i]);
+                        toCreate[RallyField.nameForWSorUSorTA] = (unreadMessageObject.Subject); 
+                        toCreate[RallyField.description] = (unreadMessageObject.BodyText.Text); 
+                        
+                        if (unreadMessageObject.Attachments.Count > 0)
+                        {
+                            //store attachments to the loacl machine
+                            unreadMessageObject.Attachments.StoreToFolder(SyncConstant.attachmentsDirectory);
+                        }
+                        else
+                        {
+                            Console.WriteLine("No attachments found for: " + unreadMessageObject.Subject);
+                        }
+                    }
+
+                    //convert each attachment to base 64 string in the attachmentsDirectory
+                    foreach (string attachment in attachmentPaths)
+                    {
+                        attachmentFileName = Path.GetFileName(attachment);
+                        base64EncodedString = fileToBase64(attachment);
+                        var fileName = string.Empty;
+
+                        if (!(attachmentsDictionary.TryGetValue(base64EncodedString, out fileName)))
+                        {
+                            attachmentsDictionary.Add(base64EncodedString, attachmentFileName);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Duplicate file exists for: " + attachmentFileName);
+                        }
+                    }
+
+                    foreach (KeyValuePair<string, string> attachmentPair in attachmentsDictionary)
+                    {
+                        try
+                        {
+                            createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate); //all the user stories are being created at this line
+                            //create attachment content
+                            attachmentContent[RallyField.content] = attachmentPair.Key;
+                            attachmentContentCreateResult = _api.Create(RallyField.attachmentContent, attachmentContent);
+                            attachmentContentReference = attachmentContentCreateResult.Reference;
+
+                            //create attachment contianer
+                            attachmentContainer[RallyField.artifact] = createUserStory.Reference; //cannot tell which userstory reference this points to
+                            attachmentContainer[RallyField.content] = attachmentContentReference;
+                            attachmentContainer[RallyField.nameForWSorUSorTA] = attachmentPair.Value;
+                            attachmentContainer[RallyField.description] = RallyField.emailAttachment;
+                            attachmentContainer[RallyField.contentType] = SyncConstant.fileType;
+
+                            //Create & associate the attachment
+                            attachmentContainerCreateResult = _api.Create(RallyField.attachment, attachmentContainer);
+                            attachmentCount++;
+
+                        }
+
+                        catch (IOException io)
+                        {
+                            Console.WriteLine(io.Message);
+                        }
+                    }
+
+                }
+                else
+                {
+                    Console.WriteLine("No Unread Messages Found");
+                }
+            }
+            catch (Imap4Exception ie)
+            {
+                Console.WriteLine(string.Format("Imap4 Exception: {0}", ie.Message));
+            }
+            catch (WebException e)
+            {
+                Console.WriteLine(string.Format("Web Exception: {0}", e.Message));
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(string.Format("Exception: {0}", e.Message));
+            }
+            finally
+            {
+                //Disconnect Rally
+                imap.Disconnect();
+            }
+
+            Console.WriteLine("User Stories Synced...");
+        }
     }
 }
 

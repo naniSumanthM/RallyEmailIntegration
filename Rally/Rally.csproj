@@ -102,6 +102,7 @@
     <Compile Include="RallyEnviornment.cs" />
     <Compile Include="RallyField.cs" />
     <Compile Include="RallyOperation.cs" />
+    <Compile Include="SyncConstant.cs" />
     <Compile Include="UserCredential.cs" />
   </ItemGroup>
   <ItemGroup>
