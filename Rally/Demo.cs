@@ -18,6 +18,8 @@ namespace Rally
             //operation.SyncUserStories(QueryField.WS_zScratch, QueryField.ST_SampleProject);
             //operation.SyncUserStoriesAndLeaveMessageAsUnread(QueryField.WS_zScratch, QueryField.ST_SampleProject);
             //operation.CreateUserStory("ListUS","Description testing with images that maybe copied and pasted", QueryField.WS_zScratch, QueryField.ST_SampleProject, QueryField.USER_Jostte, QueryField.IT_Iteration, "2");
+
+
             operation.SyncUserStoriesWithAttachments(QueryField.WS_zScratch, QueryField.ST_SampleProject);
 
             Console.ReadLine();
