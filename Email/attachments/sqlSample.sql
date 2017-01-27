@@ -1,1 +1,0 @@
-select * from rally where userstories like '%multiAttachments%'

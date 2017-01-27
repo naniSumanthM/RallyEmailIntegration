@@ -27,4 +27,3 @@ C:\Users\maddirsh\Desktop\IntegrationService\Rally\bin\Debug\ActiveUp.Net.WhoIs.
 C:\Users\maddirsh\Desktop\IntegrationService\Rally\bin\Debug\Rally.RestApi.xml
 C:\Users\maddirsh\Desktop\IntegrationService\Rally\obj\Debug\ConsoleApplication1.exe
 C:\Users\maddirsh\Desktop\IntegrationService\Rally\obj\Debug\ConsoleApplication1.pdb
-C:\Users\maddirsh\Desktop\IntegrationService\Rally\obj\Debug\Rally.csprojResolveAssemblyReference.cache

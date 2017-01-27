@@ -896,137 +896,42 @@
 
         #endregion
 
-        #region:SyncUserStoriesWithAttachments
-        public void SyncUserStoriesWithAttachments(string rallyWorkSpace, string rallyProject)
+        //even if duplicates are sent via email, windows does not download the duplicate
+        //x.txt != x(1).txt
+        //What if via sender and receiver communication the file is passed back and forth after making some changes
+        //if the file in the first place does not exist in the attachmentPath then we need not worry about creating folders for each attachment type
+        // we are mirroring the process of pulling emails and moviong to a processed folder
+
+        public void downloadAttachments()
         {
-            Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
-            string[] attachmentPaths = Directory.GetFiles(SyncConstant.attachmentsDirectory);
-            string base64EncodedString;
-            string attachmentFileName;
-            string attachmentContentReference = ""; //
-            DirectoryInfo d = new DirectoryInfo(SyncConstant.attachmentsDirectory);
-            int attachmentCount;
+            EnsureOutlookIsAuthenticated();
+            Mailbox inbox = imap.SelectMailbox(Outlook.outlookInboxFolder);
+            int[] unreadIDs = inbox.Search(Outlook.outlookUnread);
+            int unreadMessagesLength = unreadIDs.Length;
+            string destinationDirectory = SyncConstant.attachmentsProcessedDirectory;
+            string[] attachmentPaths; 
 
-            DynamicJsonObject toCreate = new DynamicJsonObject();
-            DynamicJsonObject attachmentContent = new DynamicJsonObject();
-            DynamicJsonObject attachmentContainer = new DynamicJsonObject();
-            CreateResult createUserStory;
-            CreateResult attachmentContentCreateResult;
-            CreateResult attachmentContainerCreateResult;
-
-            Console.WriteLine("Syncing User Stories...");
-
-            try
+            for (int i = 0; i < unreadMessagesLength; i++)
             {
-                //Authenticate with Rally and Outlook
-                EnsureRallyIsAuthenticated();
-                EnsureOutlookIsAuthenticated();
+                Message unreadMessageObject = inbox.Fetch.MessageObject(unreadIDs[i]);
+                Console.WriteLine("Subject: " + unreadMessageObject.Subject);
 
-                toCreate[RallyField.workSpace] = rallyWorkSpace;
-                toCreate[RallyField.project] = rallyProject;
-
-                Mailbox inbox = imap.SelectMailbox(Outlook.outlookInboxFolder);
-                int[] unreadIDs = inbox.Search(Outlook.outlookUnread);
-                int unreadIdsLength = unreadIDs.Length;
-                Console.WriteLine("Unread Mail Messages: " + unreadIdsLength);
-
-                if (unreadIdsLength > 0)
+                if (unreadMessageObject.Attachments.Count > 0)
                 {
-                    for (int i = 0; i < unreadIdsLength; i++)
-                    {
-                        Message unreadMessageObject = inbox.Fetch.MessageObject(unreadIDs[i]);
-                        toCreate[RallyField.nameForWSorUSorTA] = (unreadMessageObject.Subject);
-                        toCreate[RallyField.description] = (unreadMessageObject.BodyText.Text);
-                        createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
-
-                        //We download the atttachments from the Outlook Server if attachments exists for a given unread mail object
-                        if (unreadMessageObject.Attachments.Count > 0)
-                        {
-                            unreadMessageObject.Attachments.StoreToFolder(SyncConstant.attachmentsDirectory);
-                        }
-                        else
-                        {
-                            Console.WriteLine("No attachments found for: " + unreadMessageObject.Subject);
-                        }
-
-                        attachmentCount = d.GetFiles().Length;
-                        if (attachmentCount > 0)
-                        {
-                            //sometimes there might be mail with no attachments at all, so we need to say if there is content in the attachments directory then excute the below lines
-                            foreach (string attachment in attachmentPaths)
-                            {
-                                attachmentFileName = Path.GetFileName(attachment);
-                                base64EncodedString = fileToBase64(attachment);
-                                var fileName = string.Empty;
-
-                                if (!(attachmentsDictionary.TryGetValue(base64EncodedString, out fileName)))
-                                {
-                                    attachmentsDictionary.Add(base64EncodedString, attachmentFileName);
-                                }
-                                else
-                                {
-                                    Console.WriteLine("Duplicate file exists for: " + attachmentFileName);
-                                }
-                            }
-
-                            foreach (KeyValuePair<string, string> attachmentPair in attachmentsDictionary)
-                            {
-                                try
-                                {
-                                    attachmentContent[RallyField.content] = attachmentPair.Key;
-                                    attachmentContentCreateResult = _api.Create(RallyField.attachmentContent, attachmentContent);
-                                    attachmentContentReference = attachmentContentCreateResult.Reference;
-
-                                    //create attachment contianer
-                                    attachmentContainer[RallyField.artifact] = createUserStory.Reference;
-                                    attachmentContainer[RallyField.content] = attachmentContentReference;
-                                    attachmentContainer[RallyField.nameForWSorUSorTA] = attachmentPair.Value;
-                                    attachmentContainer[RallyField.description] = RallyField.emailAttachment;
-                                    attachmentContainer[RallyField.contentType] = SyncConstant.fileType;
-
-                                    //Create & associate the attachment
-                                    attachmentContainerCreateResult = _api.Create(RallyField.attachment, attachmentContainer);
-                                }
-                                catch (IOException io)
-                                {
-                                    Console.WriteLine(io.Message);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("None of the emails have attachments");
-                        }
-
-                        //If we are here then that means we have sucessfully processed the user stories so we r same to move
-                        inbox.MoveMessage(unreadIDs[i], Outlook.outlookProcessedFolder);
-                    } //parent for block
-                } //parent if block
-                else
-                {
-                    Console.WriteLine("No Unread Mail Messages");
+                    unreadMessageObject.Attachments.StoreToFolder(SyncConstant.attachmentsDirectory);
                 }
             }
-            catch (Imap4Exception ie)
-            {
-                Console.WriteLine(string.Format("Imap4 Exception: {0}", ie.Message));
-            }
-            catch (WebException e)
-            {
-                Console.WriteLine(string.Format("Web Exception: {0}", e.Message));
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(string.Format("Exception: {0}", e.Message));
-            }
-            finally
-            {
-                imap.Disconnect();
-            }
-            Console.WriteLine("User Stories Synced...");
-        }
-        #endregion
+            
+            attachmentPaths = Directory.GetFiles(SyncConstant.attachmentsDirectory);
 
+            foreach (var file in attachmentPaths)
+            {
+                var fileName = Path.GetFileName(file);
+                Console.WriteLine("Moving File: " + fileName);
+                File.Move(file, Path.Combine(destinationDirectory, fileName));
+            }
+        }
     }
 }
+
 
