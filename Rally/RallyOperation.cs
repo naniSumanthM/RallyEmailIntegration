@@ -935,8 +935,8 @@
         }
         #endregion
 
-        #region: Integrate
-        public void Integrate(String worskpace, string project)
+        #region: Sync Rally with Unread Email objects along with user stories 
+        public void Sync(String worskpace, string project)
         {
             //Email variables
             List<Message> unreadMsgCollection = new List<Message>();

@@ -20,7 +20,7 @@ namespace Rally
             //operation.CreateUserStory("ListUS","Description testing with images that maybe copied and pasted", QueryField.WS_zScratch, QueryField.ST_SampleProject, QueryField.USER_Jostte, QueryField.IT_Iteration, "2");
             //operation.syncUserStoriesWithAttachments();
             //operation.downloadAttachments();
-            operation.Integrate(QueryField.WS_zScratch, QueryField.ST_SampleProject);  
+            operation.Sync(QueryField.WS_zScratch, QueryField.ST_SampleProject);  
 
             Console.ReadLine();
         }
