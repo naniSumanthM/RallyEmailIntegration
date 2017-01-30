@@ -9,5 +9,8 @@
         public const string outlookProcessedFolder = "PROCESSED";
         public const string outlookInboxFolder = "INBOX";
         public const string outlookUnread = "UNSEEN";
+        public const string outlookRead = "SEEN";
+        public const string noSubject = "No Subject";
+        public const string noBody = "No Body";
     }
 }

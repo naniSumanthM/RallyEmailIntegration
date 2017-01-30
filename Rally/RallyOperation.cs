@@ -922,7 +922,8 @@
                     unreadMessageObject.Attachments.StoreToFolder(SyncConstant.attachmentsDirectory);
                 }
             }
-            
+            Console.WriteLine("Break");
+
             attachmentPaths = Directory.GetFiles(SyncConstant.attachmentsDirectory);
 
             foreach (var file in attachmentPaths)
@@ -937,10 +938,12 @@
         #region: Integrate
         public void Integrate(String worskpace, string project)
         {
+            //Email variables
             List<Message> unreadMsgCollection = new List<Message>();
             unreadMsgCollection.Capacity = 25;
             Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
 
+            //Rally variables
             DynamicJsonObject toCreate = new DynamicJsonObject();
             toCreate[RallyField.workSpace] = worskpace;
             toCreate[RallyField.project] = project;
@@ -950,6 +953,7 @@
             CreateResult attachmentContentCreateResult;
             CreateResult attachmentContainerCreateResult;
 
+            //base 64 conversion variables
             string base64String;
             string attachmentFileName;
             string[] attachmentPaths;
@@ -958,17 +962,17 @@
             try
             {
                 //Authentication
-                this.EnsureRallyIsAuthenticated();
+                EnsureRallyIsAuthenticated();
                 EnsureOutlookIsAuthenticated();
 
                 //Setup Imap enviornment
                 Mailbox inbox = imap.SelectMailbox(Outlook.outlookInboxFolder);
                 int[] unread = inbox.Search(Outlook.outlookUnread);
-                Console.WriteLine("Unread Messages: " + unread.Length);
+                FlagCollection markAsUnreadFlag = new FlagCollection();
 
                 if (unread.Length > 0)
                 {
-                    Console.WriteLine("Sync Started");
+                    Console.WriteLine("Syncing: " + unread.Length + " Unread Messages");
                     //fetch and populate unreadMsgCollection with unread Message Objects
                     for (int i = 0; i < unread.Length; i++)
                     {
@@ -976,13 +980,17 @@
                         unreadMsgCollection.Add(msg);
                     }
 
-                    //Create the user story, check for attachments, download them, base64them and then push and repeat the process
+                    //Iterate through the collection 1) Create the user story 2) Check for attachments 3) Convert attachments to base 64 4)Delete attachments once pushed 
                     for (int i = 0; i < unreadMsgCollection.Count; i++)
                     {
                         //stage the user story
-                        toCreate[RallyField.nameForWSorUSorTA] = (unreadMsgCollection[i].Subject);
-                        toCreate[RallyField.description] = (unreadMsgCollection[i].BodyText.Text);
-                        createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+                        if (unreadMsgCollection[i].Subject.Equals(""))
+                        {
+                            unreadMsgCollection[i].Subject = Outlook.noSubject;
+                        }
+                            toCreate[RallyField.nameForWSorUSorTA] = (unreadMsgCollection[i].Subject);
+                            toCreate[RallyField.description] = (unreadMsgCollection[i].BodyText.Text);
+                            createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
 
                         //check to see if message has attachments & then store them
                         if (unreadMsgCollection[i].Attachments.Count > 0)
@@ -991,7 +999,7 @@
                             unreadMsgCollection[i].Attachments.StoreToFolder(SyncConstant.attachmentsDirectory);
                         }
 
-                        //reference the path where the attachments live from the [ith] message
+                        //reference the path where the attachments live for the [ith] message
                         attachmentPaths = Directory.GetFiles(SyncConstant.attachmentsDirectory);
 
                         //Convert each attachment to base64, populate the map, and move the file
@@ -1002,15 +1010,19 @@
                             attachmentFileName = Path.GetFileName(file);
                             var fileName = string.Empty;
 
+                            //populate the dictionary - eliminate adding duplicate files
                             if (!(attachmentsDictionary.TryGetValue(base64String, out fileName)))
                             {
-                                //populate the dictionary
                                 attachmentsDictionary.Add(base64String, attachmentFileName);
                             }
 
-                            //At this point the dictionary is populated, so we move each file to another directory
-                            Console.WriteLine("Moving File: " + attachmentFileName);
-                            File.Move(file, Path.Combine(SyncConstant.attachmentsProcessedDirectory, attachmentFileName));
+                            //At this point the dictionary is populated, so we move each file to another directory - making each attachment unique to its related email object
+                            //The directory we moved to might contain a file with the same text, since there is not use for the file after its uploaded to Rally, we can purge them
+                            //Console.WriteLine("Moving File: " + attachmentFileName);
+                            //File.Move(file, Path.Combine(SyncConstant.attachmentsProcessedDirectory, attachmentFileName));
+                            //might seal "file already exists error" 
+                            Console.WriteLine("Processing... "+file);
+                            File.Delete(file); 
                         }
 
                         //Stage the attachment
@@ -1041,17 +1053,19 @@
                         attachmentsDictionary.Clear();
                     }
 
-                    //Move Fetched Messages to Processed Folder
+                    //Move Fetched Messages to Processed Folder, and mark them as unread()
                     foreach (var item in unread)
                     {
+                        markAsUnreadFlag.Add(Outlook.outlookRead);
+                        inbox.RemoveFlags(item, markAsUnreadFlag);
                         inbox.MoveMessage(item, Outlook.outlookProcessedFolder);
                     }
 
-                    Console.WriteLine("Sync Ended");
+                    Console.WriteLine("Created " + unread.Length + " User Stories");
                 }
                 else
                 {
-                    Console.WriteLine("No Unread Messages");
+                    Console.WriteLine("No Unread Messages Found...");
                 }
             }
             catch (Imap4Exception i)
@@ -1066,9 +1080,13 @@
             {
                 Console.WriteLine(e.Message);
             }
+            finally
+            {
+                imap.Disconnect();
+            }
+
         }
         #endregion
-
 
     }
 }
