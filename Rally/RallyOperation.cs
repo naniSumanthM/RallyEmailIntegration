@@ -934,112 +934,141 @@
         }
         #endregion
 
-        public void Sync(string rallyWorkspace, string rallyProject)
+        #region: Integrate
+        public void Integrate(String worskpace, string project)
         {
-            EnsureOutlookIsAuthenticated();
-            EnsureRallyIsAuthenticated();
-            
-            //Rally Process
+            List<Message> unreadMsgCollection = new List<Message>();
+            unreadMsgCollection.Capacity = 25;
             Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
+
+            DynamicJsonObject toCreate = new DynamicJsonObject();
+            toCreate[RallyField.workSpace] = worskpace;
+            toCreate[RallyField.project] = project;
+            DynamicJsonObject attachmentContent = new DynamicJsonObject();
+            DynamicJsonObject attachmentContainer = new DynamicJsonObject();
             CreateResult createUserStory;
             CreateResult attachmentContentCreateResult;
             CreateResult attachmentContainerCreateResult;
-            DynamicJsonObject toCreate = new DynamicJsonObject();
-            DynamicJsonObject attachmentContent = new DynamicJsonObject();
-            DynamicJsonObject attachmentContainer = new DynamicJsonObject();
-            toCreate[RallyField.workSpace] = rallyWorkspace;
-            toCreate[RallyField.project] = rallyProject;
 
-            //Base 64 conversion process
-            string base64EncodedString;
+            string base64String;
             string attachmentFileName;
-            string attachmentContentReference = "";
             string[] attachmentPaths;
+            string userStoryReference;
 
-            //mailbox process
-            Mailbox inbox = imap.SelectMailbox(Outlook.outlookInboxFolder);
-            int[] unreadMailMessageIDs = inbox.Search(Outlook.outlookUnread);
-            int unreadMessageCount = unreadMailMessageIDs.Length;
-            string destinationDirectory = SyncConstant.attachmentsProcessedDirectory;
-
-            Console.WriteLine("syncing Unread Messages: " + unreadMessageCount);
-
-            if (unreadMessageCount > 0)
+            try
             {
-                for (int i = 0; i < unreadMessageCount; i++)
+                //Authentication
+                this.EnsureRallyIsAuthenticated();
+                EnsureOutlookIsAuthenticated();
+
+                //Setup Imap enviornment
+                Mailbox inbox = imap.SelectMailbox(Outlook.outlookInboxFolder);
+                int[] unread = inbox.Search(Outlook.outlookUnread);
+                Console.WriteLine("Unread Messages: " + unread.Length);
+
+                if (unread.Length > 0)
                 {
-                    Message unreadMessageObject = inbox.Fetch.MessageObject(unreadMailMessageIDs[i]);
-                    toCreate[RallyField.nameForWSorUSorTA] = (unreadMessageObject.Subject);
-                    toCreate[RallyField.description] = (unreadMessageObject.BodyText.Text);
-                    createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
-
-                    if (unreadMessageObject.Attachments.Count > 0)
+                    Console.WriteLine("Sync Started");
+                    //fetch and populate unreadMsgCollection with unread Message Objects
+                    for (int i = 0; i < unread.Length; i++)
                     {
-                        unreadMessageObject.Attachments.StoreToFolder(SyncConstant.attachmentsDirectory);
+                        Message msg = inbox.Fetch.MessageObject(unread[i]);
+                        unreadMsgCollection.Add(msg);
                     }
 
-                    attachmentPaths = Directory.GetFiles(SyncConstant.attachmentsDirectory);
-
-                    foreach (var file in attachmentPaths)
+                    //Create the user story, check for attachments, download them, base64them and then push and repeat the process
+                    for (int i = 0; i < unreadMsgCollection.Count; i++)
                     {
-                        //Base 64 conversion process
-                        attachmentFileName = Path.GetFileName(file);
-                        base64EncodedString = fileToBase64(file);
-                        var filename = string.Empty;
+                        //stage the user story
+                        toCreate[RallyField.nameForWSorUSorTA] = (unreadMsgCollection[i].Subject);
+                        toCreate[RallyField.description] = (unreadMsgCollection[i].BodyText.Text);
+                        createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
 
-                        if (!(attachmentsDictionary.TryGetValue(base64EncodedString, out filename)))
+                        //check to see if message has attachments & then store them
+                        if (unreadMsgCollection[i].Attachments.Count > 0)
                         {
-                            //base64EncodedString does not exist
-                            //Populate the dictionary
-                            attachmentsDictionary.Add(base64EncodedString, attachmentFileName);
-                        }
-                        else
-                        {
-                            //Does exist so do not populate
-                            Console.WriteLine("Duplicate file exists for: " + attachmentFileName);
+                            //Do all the attachments from the email object get stored here?? _No it has to complete one iteration
+                            unreadMsgCollection[i].Attachments.StoreToFolder(SyncConstant.attachmentsDirectory);
                         }
 
-                        //Now that the dictionary is populated, move each message into processed
-                        var fileName = Path.GetFileName(file);
-                        Console.WriteLine("Moving File: " + fileName);
-                        File.Move(file, Path.Combine(destinationDirectory, fileName));
+                        //reference the path where the attachments live from the [ith] message
+                        attachmentPaths = Directory.GetFiles(SyncConstant.attachmentsDirectory);
+
+                        //Convert each attachment to base64, populate the map, and move the file
+                        foreach (var file in attachmentPaths)
+                        {
+                            //Converting attachments to base 64
+                            base64String = fileToBase64(file);
+                            attachmentFileName = Path.GetFileName(file);
+                            var fileName = string.Empty;
+
+                            if (!(attachmentsDictionary.TryGetValue(base64String, out fileName)))
+                            {
+                                //populate the dictionary
+                                attachmentsDictionary.Add(base64String, attachmentFileName);
+                            }
+
+                            //At this point the dictionary is populated, so we move each file to another directory
+                            Console.WriteLine("Moving File: " + attachmentFileName);
+                            File.Move(file, Path.Combine(SyncConstant.attachmentsProcessedDirectory, attachmentFileName));
+                        }
+
+                        //Stage the attachment
+                        foreach (KeyValuePair<string, string> attachmentPair in attachmentsDictionary)
+                        {
+                            try
+                            {
+                                //create attachment content
+                                attachmentContent[RallyField.content] = attachmentPair.Key;
+                                attachmentContentCreateResult = _api.Create(RallyField.attachmentContent, attachmentContent);
+                                userStoryReference = attachmentContentCreateResult.Reference;
+
+                                //create attachment contianer
+                                attachmentContainer[RallyField.artifact] = createUserStory.Reference;
+                                attachmentContainer[RallyField.content] = userStoryReference;
+                                attachmentContainer[RallyField.nameForWSorUSorTA] = attachmentPair.Value;
+                                attachmentContainer[RallyField.description] = RallyField.emailAttachment;
+                                attachmentContainer[RallyField.contentType] = "file/";
+
+                                //Create & associate the attachment
+                                attachmentContainerCreateResult = _api.Create(RallyField.attachment, attachmentContainer);
+                            }
+                            catch (WebException e)
+                            {
+                                Console.WriteLine("Attachment: " + e.Message);
+                            }
+                        }
+                        attachmentsDictionary.Clear();
                     }
 
-                    foreach (KeyValuePair<string, string> attachmentPair in attachmentsDictionary)
+                    //Move Fetched Messages to Processed Folder
+                    foreach (var item in unread)
                     {
-                        try
-                        {
-                            //create attachment content
-                            attachmentContent[RallyField.content] = attachmentPair.Key;
-                            attachmentContentCreateResult = _api.Create(RallyField.attachmentContent, attachmentContent);
-                            attachmentContentReference = attachmentContentCreateResult.Reference;
-
-                            //create attachment contianer
-                            attachmentContainer[RallyField.artifact] = createUserStory.Reference;
-                            attachmentContainer[RallyField.content] = attachmentContentReference;
-                            attachmentContainer[RallyField.nameForWSorUSorTA] = attachmentPair.Value;
-                            attachmentContainer[RallyField.description] = RallyField.emailAttachment;
-                            attachmentContainer[RallyField.contentType] = "file/";
-
-                            //Create & associate the attachment
-                            attachmentContainerCreateResult = _api.Create(RallyField.attachment, attachmentContainer);
-                        }
-                        catch (WebException e)
-                        {
-                            Console.WriteLine(e.Message);
-                        }
+                        inbox.MoveMessage(item, Outlook.outlookProcessedFolder);
                     }
 
-                    //Move mail object
-                    Console.WriteLine("User Stories Synced...");
-                    inbox.MoveMessage(unreadMailMessageIDs[i], Outlook.outlookProcessedFolder);
+                    Console.WriteLine("Sync Ended");
+                }
+                else
+                {
+                    Console.WriteLine("No Unread Messages");
                 }
             }
-            else
+            catch (Imap4Exception i)
             {
-                Console.WriteLine("No Unread Messages Found");
+                Console.WriteLine(i.Message);
+            }
+            catch (IOException i)
+            {
+                Console.WriteLine(i.Message);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
             }
         }
+        #endregion
+
 
     }
 }
