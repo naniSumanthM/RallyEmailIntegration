@@ -1,6 +1,6 @@
 ﻿namespace Rally
 {
-    class Outlook
+    class OutlookConstant
     {
         /// <summary>
         /// Outlook.cs holds the constants required to use the Imap4Client libary

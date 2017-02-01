@@ -2,7 +2,7 @@
 
 namespace Rally
 {
-    class RallyField
+    class RallyConstant
     {
         /// <summary>
         /// RallyField.cs holds the constants needed to leverage the Rally.NET API
