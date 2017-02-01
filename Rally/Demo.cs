@@ -6,7 +6,7 @@ namespace Rally
     {
         static void Main(string[] args)
         {
-            RallyOperation operation = new RallyOperation(RallyField.userName, RallyField.password);
+            RallyOperation operation = new RallyOperation(RallyField.UserName, RallyField.Password);
 
             //operation.getWorkspaces();
             //operation.getScrumTeams();

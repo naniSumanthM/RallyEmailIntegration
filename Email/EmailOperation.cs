@@ -288,7 +288,7 @@ namespace Email
                     foreach (var item in unreadList)
                     {
                         Console.WriteLine(item.Subject);
-                      //Console.WriteLine(item.BodyText.Text);
+                        //Console.WriteLine(item.BodyText.Text);
                     }
 
                     //Move messages to the processed folder
@@ -434,6 +434,44 @@ namespace Email
             Console.WriteLine("End");
         }
         #endregion
+
+        #region embeddedImages()
+        /// <summary>
+        /// Method to pull images that could have been copied & pasted, instead of attaching
+        /// </summary>
+
+        public void downlodInlineAttachments()
+        {
+            Imap4Client imap = new Imap4Client();
+            List<Message> unreadAttachments = new List<Message>();
+
+            imap.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
+            imap.Login(Credential.outlookUserName, Credential.outlookPassword);
+
+            Mailbox inbox = imap.SelectMailbox("inbox");
+            int[] unread = inbox.Search("unseen");
+            Console.WriteLine("Unread Messgaes: " + unread.Length);
+
+            if (unread.Length > 0)
+            {
+                //fetch each unread message
+                for (int i = 0; i < unread.Length; i++)
+                {
+                    Message unreadMessage = inbox.Fetch.MessageObject(unread[i]);
+                    Message m = inbox.Fetch.MessageObject(unread[i]);
+                    unreadAttachments.Add(unreadMessage);
+                }
+
+                //Iterate through a list of Messages and download the embedded images to a local path
+
+            }
+            else
+            {
+                Console.WriteLine("Unread Messages Not Found");
+            }
+        } 
+        #endregion
+
     }
 }
 

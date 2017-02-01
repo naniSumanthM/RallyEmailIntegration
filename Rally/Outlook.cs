@@ -2,15 +2,22 @@
 {
     class Outlook
     {
-        public const string outlookHost = "imap-mail.outlook.com";
-        public const int outlookPort = 993;
-        public const string outlookUsername = "sumanthmaddirala@outlook.com";
-        public const string outlookPassword = "iYmcmb24";
-        public const string outlookProcessedFolder = "PROCESSED";
-        public const string outlookInboxFolder = "INBOX";
-        public const string outlookUnread = "UNSEEN";
-        public const string outlookRead = "SEEN";
-        public const string noSubject = "No Subject";
-        public const string noBody = "No Body";
+        /// <summary>
+        /// Outlook.cs holds the constants required to use the Imap4Client libary
+        /// </summary>
+
+        public const int OutlookPort = 993;
+        public const string OutlookHost = "imap-mail.outlook.com";
+        public const string OutlookInboxFolder = "INBOX";
+        public const string OutlookUnseenMessages = "UNSEEN";
+        public const string OutlookSeenMessages = "SEEN";
+        public const string OutlookProcessedFolder = "PROCESSED";
+        public const string NoSubject = "No Subject";
+        public const string NoBody = "No Body";
+
+        //Sensitive - Remove after making repo public
+        public const string OutlookUsername = "sumanthmaddirala@outlook.com";
+        public const string OutlookPassword = "iYmcmb24";
+
     }
 }

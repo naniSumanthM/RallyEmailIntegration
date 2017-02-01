@@ -8,8 +8,5 @@ namespace Rally
         public const string attachmentsProcessedDirectory = "C:\\Users\\maddirsh\\Desktop\\Processed";
         public const string fileType = "file/";
 
-
-
-
     }
 }

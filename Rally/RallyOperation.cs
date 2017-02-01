@@ -16,7 +16,7 @@
     {
         RallyRestApi _api;
         Imap4Client imap;
-        public const string ServerName = RallyField.serverID;
+        public const string ServerName = RallyField.ServerId;
 
         //properties
         public string UserName { get; set; }
@@ -36,15 +36,15 @@
         {
             if (this._api.AuthenticationState != RallyRestApi.AuthenticationResult.Authenticated)
             {
-                _api.Authenticate(this.UserName, this.Password, ServerName, null, RallyField.allowSSO);
+                _api.Authenticate(this.UserName, this.Password, ServerName, null, RallyField.AllowSso);
             }
         }
 
         public void EnsureOutlookIsAuthenticated()
         {
             imap = new Imap4Client();
-            imap.ConnectSsl(Outlook.outlookHost, Outlook.outlookPort);
-            imap.Login(Outlook.outlookUsername, Outlook.outlookPassword);
+            imap.ConnectSsl(Outlook.OutlookHost, Outlook.OutlookPort);
+            imap.Login(Outlook.OutlookUsername, Outlook.OutlookPassword);
         }
 
         #region: Query Workspaces
@@ -70,7 +70,7 @@
                 foreach (var value in returnWorkspaces.Results)
                 {
                     var workspaceReference = value[QueryField.reference];
-                    var workspaceName = value[RallyField.nameForWSorUSorTA];
+                    var workspaceName = value[RallyField.Name];
                     Console.WriteLine(QueryField.wsMessage + workspaceName);
                 }
             }
@@ -100,13 +100,13 @@
                 foreach (var workspace in workSpaceQuery.Results)
                 {
                     Request projectRequest = new Request(workspace[QueryField.projects]);
-                    projectRequest.Fetch = new List<String>() { RallyField.nameForWSorUSorTA };
+                    projectRequest.Fetch = new List<String>() { RallyField.Name };
 
                     //Query for the projects
                     QueryResult projectQuery = _api.Query(projectRequest);
                     foreach (var project in projectQuery.Results)
                     {
-                        Console.WriteLine(project[RallyField.nameForWSorUSorTA]);
+                        Console.WriteLine(project[RallyField.Name]);
                     }
                 }
             }
@@ -134,16 +134,16 @@
             this.EnsureRallyIsAuthenticated();
 
             //setup the userStoryRequest
-            Request userStoryRequest = new Request(RallyField.hierarchicalRequirement);
+            Request userStoryRequest = new Request(RallyField.HierarchicalRequirement);
             userStoryRequest.Workspace = workspaceRef;
             userStoryRequest.Project = projectRef;
-            userStoryRequest.ProjectScopeUp = RallyField.projectScopeUp;
-            userStoryRequest.ProjectScopeDown = RallyField.projectScopeDown;
+            userStoryRequest.ProjectScopeUp = RallyField.ProjectScopeUp;
+            userStoryRequest.ProjectScopeDown = RallyField.ProjectScopeDown;
 
             //fetch data from the story request
             userStoryRequest.Fetch = new List<string>()
         {
-            RallyField.formattedID, RallyField.nameForWSorUSorTA, RallyField.owner
+            RallyField.FormattedId, RallyField.Name, RallyField.Owner
         };
 
             try
@@ -155,11 +155,11 @@
                 //iterate through the userStory Collection
                 foreach (var userStory in userStoryResult.Results)
                 {
-                    var userStoryOwner = userStory[RallyField.owner];
+                    var userStoryOwner = userStory[RallyField.Owner];
                     if (userStoryOwner != null)
                     {
                         var USOwner = userStoryOwner[QueryField.referenceObject];
-                        Console.WriteLine(userStory[RallyField.formattedID] + ":" + userStory[RallyField.nameForWSorUSorTA] + Environment.NewLine + QueryField.usMessage + USOwner + Environment.NewLine);
+                        Console.WriteLine(userStory[RallyField.FormattedId] + ":" + userStory[RallyField.Name] + Environment.NewLine + QueryField.usMessage + USOwner + Environment.NewLine);
                     }
                 }
             }
@@ -183,16 +183,16 @@
             this.EnsureRallyIsAuthenticated();
 
             //stage the request (not using the getters and setters from the Rally Enviornment class
-            Request userStoryRequest = new Request(RallyField.hierarchicalRequirement);
+            Request userStoryRequest = new Request(RallyField.HierarchicalRequirement);
             userStoryRequest.Workspace = workspaceRef;
             userStoryRequest.Project = projectRef;
-            userStoryRequest.ProjectScopeUp = RallyField.projectScopeUp;
-            userStoryRequest.ProjectScopeDown = RallyField.projectScopeDown;
+            userStoryRequest.ProjectScopeUp = RallyField.ProjectScopeUp;
+            userStoryRequest.ProjectScopeDown = RallyField.ProjectScopeDown;
 
             //fetch US data in the form of a list
             userStoryRequest.Fetch = new List<string>()
         {
-            RallyField.formattedID, RallyField.nameForWSorUSorTA, RallyField.capitalTasks, RallyField.estimate, RallyField.state, RallyField.owner
+            RallyField.FormattedId, RallyField.Name, RallyField.TasksUpperCase, RallyField.Estimate, RallyField.State, RallyField.Owner
         };
 
             //Userstory Query
@@ -206,25 +206,25 @@
                 //iterate through the query results
                 foreach (var userStory in userStoryResult.Results)
                 {
-                    var userStoryOwner = userStory[RallyField.owner];
+                    var userStoryOwner = userStory[RallyField.Owner];
                     if (userStoryOwner != null) //return only US who have an assigned owner
                     {
                         var USOwner = userStoryOwner[QueryField.referenceObject];
-                        Console.WriteLine(userStory[RallyField.formattedID] + ":" + userStory[RallyField.nameForWSorUSorTA]);
+                        Console.WriteLine(userStory[RallyField.FormattedId] + ":" + userStory[RallyField.Name]);
                         Console.WriteLine(QueryField.usMessage + USOwner);
                     }
 
                     //Task Request
-                    Request taskRequest = new Request(userStory[RallyField.capitalTasks]);
+                    Request taskRequest = new Request(userStory[RallyField.TasksUpperCase]);
                     QueryResult taskResult = _api.Query(taskRequest);
                     if (taskResult.TotalResultCount > 0)
                     {
                         foreach (var task in taskResult.Results)
                         {
-                            var taskName = task[RallyField.nameForWSorUSorTA];
-                            var owner = task[RallyField.owner];
-                            var taskState = task[RallyField.state];
-                            var taskEstimate = task[RallyField.estimate];
+                            var taskName = task[RallyField.Name];
+                            var owner = task[RallyField.Owner];
+                            var taskState = task[RallyField.State];
+                            var taskEstimate = task[RallyField.Estimate];
                             //var taskDescription = task[RallyField.description];
 
                             if (owner != null)
@@ -269,19 +269,19 @@
 
             //DynamicJsonObject
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyField.nameForWSorUSorTA] = usName;
-            toCreate[RallyField.description] = usDescription;
-            toCreate[RallyField.workSpace] = usWorkspace;
-            toCreate[RallyField.project] = usProject;
-            toCreate[RallyField.owner] = usOwner;
-            toCreate[RallyField.iteration] = usIteration;
-            toCreate[RallyField.planEstimate] = usPlanEstimate;
+            toCreate[RallyField.Name] = usName;
+            toCreate[RallyField.Description] = usDescription;
+            toCreate[RallyField.WorkSpace] = usWorkspace;
+            toCreate[RallyField.Project] = usProject;
+            toCreate[RallyField.Owner] = usOwner;
+            toCreate[RallyField.Iteration] = usIteration;
+            toCreate[RallyField.PlanEstimate] = usPlanEstimate;
 
             //use try and catch to create push a US to the specific workspace within a specific project
             try
             {
                 Console.WriteLine("<<Creating US>>");
-                CreateResult createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+                CreateResult createUserStory = _api.Create(RallyField.HierarchicalRequirement, toCreate);
                 Console.WriteLine("<<Created US>>");
             }
             catch (WebException)
@@ -307,17 +307,17 @@
             this.EnsureRallyIsAuthenticated();
 
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyField.nameForWSorUSorTA] = taskName;
-            toCreate[RallyField.description] = taskDescription;
-            toCreate[RallyField.owner] = taskOwner;
-            toCreate[RallyField.estimate] = taskEstimate;
-            toCreate[RallyField.workProduct] = userStoryReference;
+            toCreate[RallyField.Name] = taskName;
+            toCreate[RallyField.Description] = taskDescription;
+            toCreate[RallyField.Owner] = taskOwner;
+            toCreate[RallyField.Estimate] = taskEstimate;
+            toCreate[RallyField.WorkProduct] = userStoryReference;
 
             //create a task and attach it to a userStory
             try
             {
                 Console.WriteLine("<<Creating TA>>");
-                CreateResult createTask = _api.Create(RallyField.smallTasks, toCreate);
+                CreateResult createTask = _api.Create(RallyField.TasksLowerCase, toCreate);
                 Console.WriteLine("<<Created TA>>");
             }
             catch (WebException)
@@ -344,8 +344,8 @@
             usList.Add("Item 4");
 
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyField.workSpace] = usWorkspace;
-            toCreate[RallyField.project] = usProject;
+            toCreate[RallyField.WorkSpace] = usWorkspace;
+            toCreate[RallyField.Project] = usProject;
 
             Console.WriteLine("Start");
             try
@@ -360,8 +360,8 @@
 
                 for (int i = 0; i < usList.Count; i++)
                 {
-                    toCreate[RallyField.nameForWSorUSorTA] = usList[i];
-                    CreateResult cr = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+                    toCreate[RallyField.Name] = usList[i];
+                    CreateResult cr = _api.Create(RallyField.HierarchicalRequirement, toCreate);
                 }
             }
             catch (WebException)
@@ -385,20 +385,20 @@
 
             //Set up the US
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyField.workSpace] = usWorkspace;
-            toCreate[RallyField.project] = usProject;
+            toCreate[RallyField.WorkSpace] = usWorkspace;
+            toCreate[RallyField.Project] = usProject;
 
             Console.WriteLine("Starting...");
             try
             {
                 //Authenticate with Imap
                 Imap4Client imap = new Imap4Client();
-                imap.ConnectSsl(Outlook.outlookHost, Outlook.outlookPort);
-                imap.Login(Outlook.outlookUsername, Outlook.outlookPassword);
+                imap.ConnectSsl(Outlook.OutlookHost, Outlook.OutlookPort);
+                imap.Login(Outlook.OutlookUsername, Outlook.OutlookPassword);
 
                 //setup Imap enviornment
-                Mailbox inbox = imap.SelectMailbox(Outlook.outlookInboxFolder);
-                int[] unread = inbox.Search(Outlook.outlookUnread);
+                Mailbox inbox = imap.SelectMailbox(Outlook.OutlookInboxFolder);
+                int[] unread = inbox.Search(Outlook.OutlookUnseenMessages);
                 Console.WriteLine("Unread Messages: " + unread.Length);
 
                 if (unread.Length > 0)
@@ -413,16 +413,16 @@
                     //Create a Rally user story, with a description for each unread email message
                     for (int i = 0; i < unreadMessageList.Count; i++)
                     {
-                        toCreate[RallyField.nameForWSorUSorTA] = (unreadMessageList[i].Subject);
-                        toCreate[RallyField.description] = (unreadMessageList[i].BodyText.Text);
-                        CreateResult cr = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+                        toCreate[RallyField.Name] = (unreadMessageList[i].Subject);
+                        toCreate[RallyField.Description] = (unreadMessageList[i].BodyText.Text);
+                        CreateResult cr = _api.Create(RallyField.HierarchicalRequirement, toCreate);
                     }
 
                     //Move Fetched Messages into the processed folder
                     //Maybe mark them as unread, if a developer wants to still examine an email for further clarity
                     foreach (var item in unread)
                     {
-                        inbox.MoveMessage(item, Outlook.outlookProcessedFolder);
+                        inbox.MoveMessage(item, Outlook.OutlookProcessedFolder);
                     }
                 }
                 else
@@ -454,20 +454,20 @@
 
             //Set up the US
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyField.workSpace] = usWorkspace;
-            toCreate[RallyField.project] = usProject;
+            toCreate[RallyField.WorkSpace] = usWorkspace;
+            toCreate[RallyField.Project] = usProject;
 
             Console.WriteLine("Start");
             try
             {
                 //Authenticate with Imap
                 Imap4Client imap = new Imap4Client();
-                imap.ConnectSsl(Outlook.outlookHost, Outlook.outlookPort);
-                imap.Login(Outlook.outlookUsername, Outlook.outlookPassword);
+                imap.ConnectSsl(Outlook.OutlookHost, Outlook.OutlookPort);
+                imap.Login(Outlook.OutlookUsername, Outlook.OutlookPassword);
 
                 //setup Imap enviornment
-                Mailbox inbox = imap.SelectMailbox(Outlook.outlookInboxFolder);
-                int[] unread = inbox.Search(Outlook.outlookUnread);
+                Mailbox inbox = imap.SelectMailbox(Outlook.OutlookInboxFolder);
+                int[] unread = inbox.Search(Outlook.OutlookUnseenMessages);
                 Console.WriteLine("Unread Messages: " + unread.Length);
                 FlagCollection markAsUnreadFlag = new FlagCollection();
 
@@ -483,9 +483,9 @@
                     //Create a Rally user story along with the description found from the email
                     for (int i = 0; i < unreadMessageList.Count; i++)
                     {
-                        toCreate[RallyField.nameForWSorUSorTA] = (unreadMessageList[i].Subject);
-                        toCreate[RallyField.description] = (unreadMessageList[i].BodyText.Text);
-                        CreateResult cr = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+                        toCreate[RallyField.Name] = (unreadMessageList[i].Subject);
+                        toCreate[RallyField.Description] = (unreadMessageList[i].BodyText.Text);
+                        CreateResult cr = _api.Create(RallyField.HierarchicalRequirement, toCreate);
                     }
 
                     //Move Fetched Messages - Here We are blindly just moving all the messages in the unseen array, assuming they are processed
@@ -493,7 +493,7 @@
                     {
                         markAsUnreadFlag.Add("Seen");
                         inbox.RemoveFlags(item, markAsUnreadFlag); //removing the seen flag on the email object
-                        inbox.MoveMessage(item, Outlook.outlookProcessedFolder);
+                        inbox.MoveMessage(item, Outlook.OutlookProcessedFolder);
                     }
                     //TODO: Safer to write another loop and iterate over the procesed folder, but that will crawl
                     //the entire inbox and mark the already read items as unread.
@@ -586,10 +586,10 @@
 
             //UserStory Setup
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyField.workSpace] = workspace;
-            toCreate[RallyField.project] = project;
-            toCreate[RallyField.nameForWSorUSorTA] = userStoryName;
-            toCreate[RallyField.description] = userStoryDescription;
+            toCreate[RallyField.WorkSpace] = workspace;
+            toCreate[RallyField.Project] = project;
+            toCreate[RallyField.Name] = userStoryName;
+            toCreate[RallyField.Description] = userStoryDescription;
 
             //get the image reference - assume that this is where the image lives in respect to the path after being pulled from outlook
             String imageFilePath = "C:\\Users\\maddirsh\\Desktop\\";
@@ -605,28 +605,28 @@
 
             // DynamicJSONObject for AttachmentContent
             DynamicJsonObject myAttachmentContent = new DynamicJsonObject();
-            myAttachmentContent[RallyField.content] = imageBase64String;
+            myAttachmentContent[RallyField.Content] = imageBase64String;
 
             try
             {
                 //create user story
-                CreateResult createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+                CreateResult createUserStory = _api.Create(RallyField.HierarchicalRequirement, toCreate);
 
                 //create attachment
-                CreateResult myAttachmentContentCreateResult = _api.Create(RallyField.attachmentContent, myAttachmentContent);
+                CreateResult myAttachmentContentCreateResult = _api.Create(RallyField.AttachmentContent, myAttachmentContent);
                 String myAttachmentContentRef = myAttachmentContentCreateResult.Reference;
 
                 // DynamicJSONObject for Attachment Container
                 DynamicJsonObject myAttachment = new DynamicJsonObject();
-                myAttachment[RallyField.artifact] = createUserStory.Reference;
-                myAttachment[RallyField.content] = myAttachmentContentRef;
-                myAttachment[RallyField.nameForWSorUSorTA] = "fileName.png"; //method to get the fileName from the attached documents
-                myAttachment[RallyField.description] = "Email Attachment";
-                myAttachment[RallyField.contentType] = "image/png"; //Method to identify the fileType.java
-                myAttachment[RallyField.size] = imageNumberBytes;
+                myAttachment[RallyField.Artifact] = createUserStory.Reference;
+                myAttachment[RallyField.Content] = myAttachmentContentRef;
+                myAttachment[RallyField.Name] = "fileName.png"; //method to get the fileName from the attached documents
+                myAttachment[RallyField.Description] = "Email Attachment";
+                myAttachment[RallyField.ContentType] = "image/png"; //Method to identify the fileType.java
+                myAttachment[RallyField.Size] = imageNumberBytes;
 
                 //create & associate the attachment
-                CreateResult myAttachmentCreateResult = _api.Create(RallyField.attachment, myAttachment);
+                CreateResult myAttachmentCreateResult = _api.Create(RallyField.Attachment, myAttachment);
                 Console.WriteLine("Created User Story: " + createUserStory.Reference);
             }
             catch (WebException e)
@@ -670,10 +670,10 @@
 
             //User story creation and set up
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyField.workSpace] = workspace;
-            toCreate[RallyField.project] = project;
-            toCreate[RallyField.nameForWSorUSorTA] = userstoryName;
-            createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+            toCreate[RallyField.WorkSpace] = workspace;
+            toCreate[RallyField.Project] = project;
+            toCreate[RallyField.Name] = userstoryName;
+            createUserStory = _api.Create(RallyField.HierarchicalRequirement, toCreate);
 
             //iterate over each filePath and a) convert to base 64, b) get the fileName.extension, c)Add to the dictionary object
             foreach (string attachment in attachmentPaths)
@@ -692,20 +692,20 @@
                 try
                 {
                     //create attachment content
-                    attachmentContent[RallyField.content] = attachmentPair.Key;
-                    attachmentContentCreateResult = _api.Create(RallyField.attachmentContent, attachmentContent);
+                    attachmentContent[RallyField.Content] = attachmentPair.Key;
+                    attachmentContentCreateResult = _api.Create(RallyField.AttachmentContent, attachmentContent);
                     attachmentContentReference = attachmentContentCreateResult.Reference;
 
                     //create attachment contianer
-                    attachmentContainer[RallyField.artifact] = createUserStory.Reference;
-                    attachmentContainer[RallyField.content] = attachmentContentReference;
-                    attachmentContainer[RallyField.nameForWSorUSorTA] = attachmentPair.Value;
-                    attachmentContainer[RallyField.description] = RallyField.emailAttachment;
-                    attachmentContainer[RallyField.contentType] = "file/";
+                    attachmentContainer[RallyField.Artifact] = createUserStory.Reference;
+                    attachmentContainer[RallyField.Content] = attachmentContentReference;
+                    attachmentContainer[RallyField.Name] = attachmentPair.Value;
+                    attachmentContainer[RallyField.Description] = RallyField.EmailAttachment;
+                    attachmentContainer[RallyField.ContentType] = "file/";
                     //attachmentContainer[RallyField.size] = Omitted
 
                     //Create & associate the attachment
-                    attachmentContainerCreateResult = _api.Create(RallyField.attachment, attachmentContainer);
+                    attachmentContainerCreateResult = _api.Create(RallyField.Attachment, attachmentContainer);
                     Console.WriteLine("Created User Story: " + createUserStory.Reference);
                 }
                 catch (WebException e)
@@ -751,10 +751,10 @@
 
             //User story creation and set up
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyField.workSpace] = workspace;
-            toCreate[RallyField.project] = project;
-            toCreate[RallyField.nameForWSorUSorTA] = userstoryName;
-            createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+            toCreate[RallyField.WorkSpace] = workspace;
+            toCreate[RallyField.Project] = project;
+            toCreate[RallyField.Name] = userstoryName;
+            createUserStory = _api.Create(RallyField.HierarchicalRequirement, toCreate);
 
             //iterate over each filePath and a) convert to base 64, b) get the fileName.extension, c)Add to the dictionary object
             foreach (string attachment in attachmentPaths)
@@ -783,19 +783,19 @@
                 try
                 {
                     //create attachment content
-                    attachmentContent[RallyField.content] = attachmentPair.Value;
-                    attachmentContentCreateResult = _api.Create(RallyField.attachmentContent, attachmentContent);
+                    attachmentContent[RallyField.Content] = attachmentPair.Value;
+                    attachmentContentCreateResult = _api.Create(RallyField.AttachmentContent, attachmentContent);
                     attachmentContentReference = attachmentContentCreateResult.Reference;
 
                     //create attachment contianer
-                    attachmentContainer[RallyField.artifact] = createUserStory.Reference;
-                    attachmentContainer[RallyField.content] = attachmentContentReference;
-                    attachmentContainer[RallyField.nameForWSorUSorTA] = attachmentPair.Key;
-                    attachmentContainer[RallyField.description] = RallyField.emailAttachment;
-                    attachmentContainer[RallyField.contentType] = "file/";
+                    attachmentContainer[RallyField.Artifact] = createUserStory.Reference;
+                    attachmentContainer[RallyField.Content] = attachmentContentReference;
+                    attachmentContainer[RallyField.Name] = attachmentPair.Key;
+                    attachmentContainer[RallyField.Description] = RallyField.EmailAttachment;
+                    attachmentContainer[RallyField.ContentType] = "file/";
 
                     //Create & associate the attachment
-                    attachmentContainerCreateResult = _api.Create(RallyField.attachment, attachmentContainer);
+                    attachmentContainerCreateResult = _api.Create(RallyField.Attachment, attachmentContainer);
                     Console.WriteLine("Created User Story: " + createUserStory.Reference);
                 }
                 catch (WebException e)
@@ -839,10 +839,10 @@
 
             //User story creation and set up
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyField.workSpace] = workspace;
-            toCreate[RallyField.project] = project;
-            toCreate[RallyField.nameForWSorUSorTA] = userstoryName;
-            createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+            toCreate[RallyField.WorkSpace] = workspace;
+            toCreate[RallyField.Project] = project;
+            toCreate[RallyField.Name] = userstoryName;
+            createUserStory = _api.Create(RallyField.HierarchicalRequirement, toCreate);
 
             foreach (string attachment in attachmentPaths)
             {
@@ -870,19 +870,19 @@
                 try
                 {
                     //create attachment content
-                    attachmentContent[RallyField.content] = attachmentPair.Key;
-                    attachmentContentCreateResult = _api.Create(RallyField.attachmentContent, attachmentContent);
+                    attachmentContent[RallyField.Content] = attachmentPair.Key;
+                    attachmentContentCreateResult = _api.Create(RallyField.AttachmentContent, attachmentContent);
                     attachmentContentReference = attachmentContentCreateResult.Reference;
 
                     //create attachment contianer
-                    attachmentContainer[RallyField.artifact] = createUserStory.Reference;
-                    attachmentContainer[RallyField.content] = attachmentContentReference;
-                    attachmentContainer[RallyField.nameForWSorUSorTA] = attachmentPair.Value;
-                    attachmentContainer[RallyField.description] = RallyField.emailAttachment;
-                    attachmentContainer[RallyField.contentType] = "file/";
+                    attachmentContainer[RallyField.Artifact] = createUserStory.Reference;
+                    attachmentContainer[RallyField.Content] = attachmentContentReference;
+                    attachmentContainer[RallyField.Name] = attachmentPair.Value;
+                    attachmentContainer[RallyField.Description] = RallyField.EmailAttachment;
+                    attachmentContainer[RallyField.ContentType] = "file/";
 
                     //Create & associate the attachment
-                    attachmentContainerCreateResult = _api.Create(RallyField.attachment, attachmentContainer);
+                    attachmentContainerCreateResult = _api.Create(RallyField.Attachment, attachmentContainer);
                     attachmentCount++;
                 }
                 catch (WebException e)
@@ -906,8 +906,8 @@
         public void downloadAttachments()
         {
             EnsureOutlookIsAuthenticated();
-            Mailbox inbox = imap.SelectMailbox(Outlook.outlookInboxFolder);
-            int[] unreadIDs = inbox.Search(Outlook.outlookUnread);
+            Mailbox inbox = imap.SelectMailbox(Outlook.OutlookInboxFolder);
+            int[] unreadIDs = inbox.Search(Outlook.OutlookUnseenMessages);
             int unreadMessagesLength = unreadIDs.Length;
             string[] attachmentPaths; 
             string destinationDirectory = SyncConstant.attachmentsProcessedDirectory;
@@ -935,7 +935,7 @@
         }
         #endregion
 
-        #region: Sync Rally with Unread Email objects along with user stories 
+        #region: Sync Rally 
         public void Sync(String worskpace, string project)
         {
             //Email variables
@@ -945,8 +945,8 @@
 
             //Rally variables
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyField.workSpace] = worskpace;
-            toCreate[RallyField.project] = project;
+            toCreate[RallyField.WorkSpace] = worskpace;
+            toCreate[RallyField.Project] = project;
             DynamicJsonObject attachmentContent = new DynamicJsonObject();
             DynamicJsonObject attachmentContainer = new DynamicJsonObject();
             CreateResult createUserStory;
@@ -966,8 +966,8 @@
                 EnsureOutlookIsAuthenticated();
 
                 //Setup Imap enviornment
-                Mailbox inbox = imap.SelectMailbox(Outlook.outlookInboxFolder);
-                int[] unread = inbox.Search(Outlook.outlookUnread);
+                Mailbox inbox = imap.SelectMailbox(Outlook.OutlookInboxFolder);
+                int[] unread = inbox.Search(Outlook.OutlookUnseenMessages);
                 FlagCollection markAsUnreadFlag = new FlagCollection();
 
                 if (unread.Length > 0)
@@ -986,11 +986,11 @@
                         //stage the user story
                         if (unreadMsgCollection[i].Subject.Equals(""))
                         {
-                            unreadMsgCollection[i].Subject = Outlook.noSubject;
+                            unreadMsgCollection[i].Subject = Outlook.NoSubject;
                         }
-                            toCreate[RallyField.nameForWSorUSorTA] = (unreadMsgCollection[i].Subject);
-                            toCreate[RallyField.description] = (unreadMsgCollection[i].BodyText.Text);
-                            createUserStory = _api.Create(RallyField.hierarchicalRequirement, toCreate);
+                            toCreate[RallyField.Name] = (unreadMsgCollection[i].Subject);
+                            toCreate[RallyField.Description] = (unreadMsgCollection[i].BodyText.Text);
+                            createUserStory = _api.Create(RallyField.HierarchicalRequirement, toCreate);
 
                         //check to see if message has attachments & then store them
                         if (unreadMsgCollection[i].Attachments.Count > 0)
@@ -1031,19 +1031,19 @@
                             try
                             {
                                 //create attachment content
-                                attachmentContent[RallyField.content] = attachmentPair.Key;
-                                attachmentContentCreateResult = _api.Create(RallyField.attachmentContent, attachmentContent);
+                                attachmentContent[RallyField.Content] = attachmentPair.Key;
+                                attachmentContentCreateResult = _api.Create(RallyField.AttachmentContent, attachmentContent);
                                 userStoryReference = attachmentContentCreateResult.Reference;
 
                                 //create attachment contianer
-                                attachmentContainer[RallyField.artifact] = createUserStory.Reference;
-                                attachmentContainer[RallyField.content] = userStoryReference;
-                                attachmentContainer[RallyField.nameForWSorUSorTA] = attachmentPair.Value;
-                                attachmentContainer[RallyField.description] = RallyField.emailAttachment;
-                                attachmentContainer[RallyField.contentType] = "file/";
+                                attachmentContainer[RallyField.Artifact] = createUserStory.Reference;
+                                attachmentContainer[RallyField.Content] = userStoryReference;
+                                attachmentContainer[RallyField.Name] = attachmentPair.Value;
+                                attachmentContainer[RallyField.Description] = RallyField.EmailAttachment;
+                                attachmentContainer[RallyField.ContentType] = "file/";
 
                                 //Create & associate the attachment
-                                attachmentContainerCreateResult = _api.Create(RallyField.attachment, attachmentContainer);
+                                attachmentContainerCreateResult = _api.Create(RallyField.Attachment, attachmentContainer);
                             }
                             catch (WebException e)
                             {
@@ -1056,9 +1056,9 @@
                     //Move Fetched Messages to Processed Folder, and mark them as unread()
                     foreach (var item in unread)
                     {
-                        markAsUnreadFlag.Add(Outlook.outlookRead);
+                        markAsUnreadFlag.Add(Outlook.OutlookSeenMessages);
                         inbox.RemoveFlags(item, markAsUnreadFlag);
-                        inbox.MoveMessage(item, Outlook.outlookProcessedFolder);
+                        inbox.MoveMessage(item, Outlook.OutlookProcessedFolder);
                     }
 
                     Console.WriteLine("Created " + unread.Length + " User Stories");

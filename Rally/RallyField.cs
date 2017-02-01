@@ -5,43 +5,40 @@ namespace Rally
     class RallyField
     {
         /// <summary>
-        /// Class that stores the fields relating to Rally enviornment
-        /// CRUD operations can be performed on these fields
+        /// RallyField.cs holds the constants needed to leverage the Rally.NET API
         /// </summary>
 
-        public const string workSpace = "Workspace";
-        public const string project = "Project";
-        public const string owner = "Owner";
-        public const string iteration = "Iteration";
-        public const string description = "Description";
-        public const string estimate = "Estimate";
-        public const string planEstimate = "PlanEstimate";
-        public const string hierarchicalRequirement = "HierarchicalRequirement";
-        public const string workProduct = "WorkProduct";
-        public const string smallTasks = "tasks";
-        public const string capitalTasks = "Tasks";
-        public const string state = "State";
-        public const string formattedID = "FormattedID";
-        public const string nameForWSorUSorTA = "Name";
-        public const string artifact = "Artifact";
-        public const string size = "Size";
-        public const string content = "Content";
-        public const string contentType = "ContentType";
-        public const string attachment = "Attachment";
-        public const string attachmentContent = "AttachmentContent";
+        //Server Constants
+        public const string ServerId = "https://rally1.rallydev.com";
+        public const bool ProjectScopeUp = true;
+        public const bool ProjectScopeDown = true;
+        public const bool AllowSso = false;
 
-        //Authentication fields:
-        public const string serverID = "https://rally1.rallydev.com";
-        public const bool projectScopeUp = true;
-        public const bool projectScopeDown = true;
-        public static bool allowSSO = false;
+        //API Constants
+        public const string WorkSpace = "Workspace";
+        public const string Project = "Project";
+        public const string Owner = "Owner";
+        public const string Iteration = "Iteration";
+        public const string Description = "Description";
+        public const string Estimate = "Estimate";
+        public const string PlanEstimate = "PlanEstimate";
+        public const string HierarchicalRequirement = "HierarchicalRequirement";
+        public const string WorkProduct = "WorkProduct";
+        public const string TasksLowerCase = "tasks";
+        public const string TasksUpperCase = "Tasks";
+        public const string State = "State";
+        public const string FormattedId = "FormattedID";
+        public const string Name = "Name";
+        public const string Artifact = "Artifact";
+        public const string Size = "Size";
+        public const string Content = "Content";
+        public const string ContentType = "ContentType";
+        public const string Attachment = "Attachment";
+        public const string AttachmentContent = "AttachmentContent";
+        public const string EmailAttachment = "Email Attachment";
 
         //Login fields
-        public const string userName = "maddirsh@mail.uc.edu";
-        public const string password = "iYmcmb24";
-
-        //Attachment Constants
-        public const string emailAttachment = "Email Attachment";
-
+        public const string UserName = "maddirsh@mail.uc.edu";
+        public const string Password = "iYmcmb24";
     }
 }
