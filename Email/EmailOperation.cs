@@ -1,6 +1,7 @@
 ﻿using System;
 using ActiveUp.Net.Mail;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Email
 {
@@ -19,8 +20,8 @@ namespace Email
             try
             {
                 //Authenticate with the Outlook Server
-                imap.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
-                imap.Login(Credential.outlookUserName, Credential.outlookPassword);
+                imap.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
+                imap.Login(Constant.OutlookUserName, Constant.OutlookPassword);
 
                 //Select a mailbox folder
                 Mailbox inbox = imap.SelectMailbox("inbox");
@@ -64,8 +65,8 @@ namespace Email
             try
             {
                 //Authenticate 
-                client.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
-                client.Login(Credential.outlookUserName, Credential.outlookPassword);
+                client.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
+                client.Login(Constant.OutlookUserName, Constant.OutlookPassword);
 
                 //Stage the enviornment
                 Mailbox inbox = client.SelectMailbox("INBOX");
@@ -123,8 +124,8 @@ namespace Email
 
             try
             {
-                imap.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
-                imap.Login(Credential.outlookUserName, Credential.outlookPassword);
+                imap.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
+                imap.Login(Constant.OutlookUserName, Constant.OutlookPassword);
 
                 //setup Enviornment
                 Mailbox inbox = imap.SelectMailbox("INBOX");
@@ -180,8 +181,8 @@ namespace Email
             try
             {
                 //Connect and Authenticate
-                client.ConnectSsl(Credential.outlookImapHost, 993);
-                client.Login(Credential.outlookUserName, Credential.outlookPassword);
+                client.ConnectSsl(Constant.OutlookImapHost, 993);
+                client.Login(Constant.OutlookUserName, Constant.OutlookPassword);
 
                 //create mailbox
                 client.CreateMailbox("Mailbox-A");
@@ -217,11 +218,11 @@ namespace Email
             try
             {
                 //Authenticate 
-                client.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
-                client.Login(Credential.outlookUserName, Credential.outlookPassword);
+                client.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
+                client.Login(Constant.OutlookUserName, Constant.OutlookPassword);
 
                 //client.CreateMailbox("Created");
-                Mailbox inbox = client.SelectMailbox(Credential.inboxFolder);
+                Mailbox inbox = client.SelectMailbox(Constant.InboxFolder);
                 Console.WriteLine(inbox.MessageCount);
 
                 //Array of ALL email objects in selected mailbox
@@ -230,11 +231,11 @@ namespace Email
                 //iterate and move each message to a different folder
                 foreach (var id in ids)
                 {
-                    inbox.MoveMessage(id, Credential.processedFolder);
+                    inbox.MoveMessage(id, Constant.ProcessedFolder);
                 }
 
-                var mailsUndeleted = client.SelectMailbox(Credential.inboxFolder);
-                Console.WriteLine("Moved Messages to: " + Credential.processedFolder);
+                var mailsUndeleted = client.SelectMailbox(Constant.InboxFolder);
+                Console.WriteLine("Moved Messages to: " + Constant.ProcessedFolder);
             }
             catch (Imap4Exception)
             {
@@ -265,11 +266,11 @@ namespace Email
             try
             {
                 //Connect and Authenticate
-                imap.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
-                imap.Login(Credential.outlookUserName, Credential.outlookPassword);
+                imap.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
+                imap.Login(Constant.OutlookUserName, Constant.OutlookPassword);
 
                 //setup Enviornment
-                Mailbox inbox = imap.SelectMailbox(Credential.inboxFolder);
+                Mailbox inbox = imap.SelectMailbox(Constant.InboxFolder);
                 int[] unread = inbox.Search("UNSEEN");
                 Console.WriteLine("Unread Messages: " + unread.Length);
 
@@ -294,7 +295,7 @@ namespace Email
                     //Move messages to the processed folder
                     foreach (var item in unread)
                     {
-                        inbox.MoveMessage(item, Credential.processedFolder);
+                        inbox.MoveMessage(item, Constant.ProcessedFolder);
                     }
                     //line could cause an error
                     //Mailbox movedFrom = imap.SelectMailbox(Credential.inboxFolder);
@@ -336,8 +337,8 @@ namespace Email
             try
             {
                 //Authenticate
-                client.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
-                client.Login(Credential.outlookUserName, Credential.outlookPassword);
+                client.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
+                client.Login(Constant.OutlookUserName, Constant.OutlookPassword);
 
                 //stage the enviornment
                 Mailbox inbox = client.SelectMailbox("inbox");
@@ -380,8 +381,8 @@ namespace Email
             try
             {
                 //Authenticate
-                imap.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
-                imap.Login(Credential.outlookUserName, Credential.outlookPassword);
+                imap.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
+                imap.Login(Constant.OutlookUserName, Constant.OutlookPassword);
 
                 Mailbox inbox = imap.SelectMailbox("inbox");
                 int[] unread = inbox.Search("unseen");
@@ -439,37 +440,33 @@ namespace Email
         /// <summary>
         /// Method to pull images that could have been copied & pasted, instead of attaching
         /// </summary>
-
         public void downlodInlineAttachments()
         {
-            Imap4Client imap = new Imap4Client();
-            List<Message> unreadAttachments = new List<Message>();
+            var imap = new Imap4Client();
 
-            imap.ConnectSsl(Credential.outlookImapHost, Credential.outlookImapPort);
-            imap.Login(Credential.outlookUserName, Credential.outlookPassword);
+            //Authentication
+            imap.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
+            imap.Login(Constant.OutlookUserName, Constant.OutlookPassword);
 
-            Mailbox inbox = imap.SelectMailbox("inbox");
-            int[] unread = inbox.Search("unseen");
+            var inbox = imap.SelectMailbox("inbox");
+            var unread = inbox.Search("unseen");
             Console.WriteLine("Unread Messgaes: " + unread.Length);
 
             if (unread.Length > 0)
-            {
-                //fetch each unread message
-                for (int i = 0; i < unread.Length; i++)
+                for (var i = 0; i < unread.Length; i++)
                 {
-                    Message unreadMessage = inbox.Fetch.MessageObject(unread[i]);
-                    Message m = inbox.Fetch.MessageObject(unread[i]);
-                    unreadAttachments.Add(unreadMessage);
+                    var unreadMessage = inbox.Fetch.MessageObject(unread[i]);
+                    foreach (MimePart embedded in unreadMessage.EmbeddedObjects)
+                    {
+                        var filename = embedded.ContentName;
+                        var binary = embedded.BinaryContent;
+                        File.WriteAllBytes(Constant.AttachmentPath+filename, binary);
+                        Console.WriteLine("Downloaded: " + filename);
+                    }
                 }
-
-                //Iterate through a list of Messages and download the embedded images to a local path
-
-            }
             else
-            {
                 Console.WriteLine("Unread Messages Not Found");
-            }
-        } 
+        }
         #endregion
 
     }

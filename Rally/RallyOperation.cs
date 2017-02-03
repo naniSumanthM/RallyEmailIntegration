@@ -1021,7 +1021,7 @@
                             //Console.WriteLine("Moving File: " + attachmentFileName);
                             //File.Move(file, Path.Combine(SyncConstant.attachmentsProcessedDirectory, attachmentFileName));
                             //might seal "file already exists error" 
-                            Console.WriteLine("Processing... "+file);
+                            Console.WriteLine("Uploading: "+file);
                             File.Delete(file); 
                         }
 

@@ -24,6 +24,5 @@ C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\ActiveUp.Net.OpenPG
 C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\ActiveUp.Net.Pop3.xml
 C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\ActiveUp.Net.Smtp.xml
 C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\ActiveUp.Net.WhoIs.xml
-C:\Users\maddirsh\Desktop\IntegrationService\Email\obj\Debug\Email.csprojResolveAssemblyReference.cache
 C:\Users\maddirsh\Desktop\IntegrationService\Email\obj\Debug\Email.exe
 C:\Users\maddirsh\Desktop\IntegrationService\Email\obj\Debug\Email.pdb

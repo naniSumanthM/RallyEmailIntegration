@@ -91,7 +91,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Credential.cs" />
+    <Compile Include="Constant.cs" />
     <Compile Include="Demo.cs" />
     <Compile Include="EmailOperation.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
