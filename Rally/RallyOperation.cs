@@ -12,6 +12,8 @@
     using System.Drawing;
     #endregion
 
+    // jonesbr@ucmail.uc.edu
+
     class RallyOperation
     {
         RallyRestApi _api;
@@ -902,14 +904,14 @@
         //What if via sender and receiver communication the file is passed back and forth after making some changes
         //if the file in the first place does not exist in the attachmentPath then we need not worry about creating folders for each attachment type
         // we are mirroring the process of pulling emails and moviong to a processed folder
-        
+
         public void downloadAttachments()
         {
             EnsureOutlookIsAuthenticated();
             Mailbox inbox = imap.SelectMailbox(OutlookConstant.OutlookInboxFolder);
             int[] unreadIDs = inbox.Search(OutlookConstant.OutlookUnseenMessages);
             int unreadMessagesLength = unreadIDs.Length;
-            string[] attachmentPaths; 
+            string[] attachmentPaths;
             string destinationDirectory = SyncConstant.AttachmentsProcessedDirectory;
 
             for (int i = 0; i < unreadMessagesLength; i++)
@@ -988,9 +990,9 @@
                         {
                             unreadMsgCollection[i].Subject = OutlookConstant.NoSubject;
                         }
-                            toCreate[RallyConstant.Name] = (unreadMsgCollection[i].Subject);
-                            toCreate[RallyConstant.Description] = (unreadMsgCollection[i].BodyText.Text);
-                            createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
+                        toCreate[RallyConstant.Name] = (unreadMsgCollection[i].Subject);
+                        toCreate[RallyConstant.Description] = (unreadMsgCollection[i].BodyText.Text);
+                        createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
 
                         //check to see if message has attachments & then store them
                         if (unreadMsgCollection[i].Attachments.Count > 0)
@@ -1021,8 +1023,8 @@
                             //Console.WriteLine("Moving File: " + attachmentFileName);
                             //File.Move(file, Path.Combine(SyncConstant.attachmentsProcessedDirectory, attachmentFileName));
                             //might seal "file already exists error" 
-                            Console.WriteLine("Uploading: "+file);
-                            File.Delete(file); 
+                            Console.WriteLine("Uploading: " + file);
+                            File.Delete(file);
                         }
 
                         //Stage the attachment
@@ -1088,7 +1090,42 @@
         }
         #endregion
 
+        #region: getIterations()
+        public void getIterations(string workspace, string project)
+        {
+            
+            this.EnsureRallyIsAuthenticated();            
+            
+            Request iterationRequest = new Request(RallyConstant.Iteration);
+            iterationRequest.Workspace = workspace;
+            iterationRequest.Project = project;
+            iterationRequest.ProjectScopeUp = RallyConstant.ProjectScopeUp;
+            iterationRequest.ProjectScopeDown = RallyConstant.ProjectScopeDown;
+
+            try
+            {
+                iterationRequest.Fetch = new List<string>()
+                {
+                 RallyConstant.Name
+                };
+
+                iterationRequest.Query = new Query(RallyConstant.Project, Query.Operator.Equals, RallyQueryConstant.ScrumTeamSampleProject);
+                QueryResult queryResult = _api.Query(iterationRequest);
+                foreach (var iteration in queryResult.Results)
+                {
+                    Console.WriteLine(iteration[RallyConstant.Name]);
+                }
+
+            }
+            catch(WebException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        } 
+        #endregion
+
     }
+
 }
 
 
