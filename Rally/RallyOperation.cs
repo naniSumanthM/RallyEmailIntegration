@@ -1121,8 +1121,41 @@
             {
                 Console.WriteLine(e.Message);
             }
-        } 
+        }
         #endregion
+
+        /// <summary>
+        /// Feature is read only, so they have to be pre made and attached to the user stories
+        /// </summary>
+        /// <param name="workspace"></param>
+        /// <param name="project"></param>
+        /// <param name="userstory"></param>
+
+        public void CreateUserStory(string workspace, string project, string userstory)
+        {
+            //authenticate
+            this.EnsureRallyIsAuthenticated();
+
+            //DynamicJsonObject
+            DynamicJsonObject toCreate = new DynamicJsonObject();
+            toCreate[RallyConstant.WorkSpace] = workspace;
+            toCreate[RallyConstant.Project] = project;
+            toCreate[RallyConstant.Name] = userstory;
+            toCreate["PortfolioItem"] = "portfolioitem/feature/49487570246";
+            
+            try
+            {
+                Console.WriteLine("<<Creating US>>");
+                CreateResult createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
+                Console.WriteLine("<<Created US>>");
+            }
+            catch (WebException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+
+
 
     }
 
