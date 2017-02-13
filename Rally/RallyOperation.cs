@@ -252,45 +252,79 @@
 
         #endregion
 
-        #region: Create User Story
-        /// <summary>
-        /// Method Creates a UserStory in Rally, according to the data passed in the parameters
-        /// </summary>
-        /// <param name="usName"></param>
-        /// <param name="usDescription"></param>
-        /// <param name="usWorkspace"></param>
-        /// <param name="usProject"></param>
-        /// <param name="usOwner"></param>
-        /// <param name="usIteration"></param>
-        /// <param name="usPlanEstimate"></param>
+        #region: Query Iterations
+        public void getIterations(string workspace, string project)
+        {
 
-        public void CreateUserStory(string usName, string usDescription, string usWorkspace, string usProject, string usOwner, string usIteration, string usPlanEstimate)
+            this.EnsureRallyIsAuthenticated();
+
+            Request iterationRequest = new Request(RallyConstant.Iteration);
+            iterationRequest.Workspace = workspace;
+            iterationRequest.Project = project;
+            iterationRequest.ProjectScopeUp = RallyConstant.ProjectScopeUp;
+            iterationRequest.ProjectScopeDown = RallyConstant.ProjectScopeDown;
+
+            try
+            {
+                iterationRequest.Fetch = new List<string>()
+                {
+                 RallyConstant.Name
+                };
+
+                iterationRequest.Query = new Query(RallyConstant.Project, Query.Operator.Equals, RallyQueryConstant.ScrumTeamSampleProject);
+                QueryResult queryResult = _api.Query(iterationRequest);
+                foreach (var iteration in queryResult.Results)
+                {
+                    Console.WriteLine(iteration[RallyConstant.Name]);
+                }
+
+            }
+            catch (WebException e)
+            {
+                Console.WriteLine(e.Message);
+            }
+        }
+        #endregion
+
+        #region: create Userstory
+        /// <summary>
+        /// Creates the userstory with a feature or iteration
+        /// Both feature and iteration are read only fields
+        /// </summary>
+        /// <param name="workspace"></param>
+        /// <param name="project"></param>
+        /// <param name="userstory"></param>
+        /// <param name="userstoryDescription"></param>
+        /// <param name="userstoryOwner"></param>
+
+
+        public void CreateUserStory(string workspace, string project, string userstory, string userstoryDescription, string userstoryOwner)
         {
             //authenticate
             this.EnsureRallyIsAuthenticated();
 
             //DynamicJsonObject
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyConstant.Name] = usName;
-            toCreate[RallyConstant.Description] = usDescription;
-            toCreate[RallyConstant.WorkSpace] = usWorkspace;
-            toCreate[RallyConstant.Project] = usProject;
-            toCreate[RallyConstant.Owner] = usOwner;
-            toCreate[RallyConstant.Iteration] = usIteration;
-            toCreate[RallyConstant.PlanEstimate] = usPlanEstimate;
+            toCreate[RallyConstant.WorkSpace] = workspace;
+            toCreate[RallyConstant.Project] = project;
+            toCreate[RallyConstant.Name] = userstory;
+            toCreate[RallyConstant.Description] = userstoryDescription;
+            toCreate[RallyConstant.Owner] = userstoryOwner;
+            toCreate[RallyConstant.PlanEstimate] = "1";
+            toCreate[RallyConstant.PortfolioItem] = "portfolioitem/feature/49487570246";
+            //toCreate[RallyConstant.Iteration] = usIteration;
 
-            //use try and catch to create push a US to the specific workspace within a specific project
             try
             {
-                Console.WriteLine("<<Creating US>>");
                 CreateResult createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
-                Console.WriteLine("<<Created US>>");
+                Console.WriteLine("Created Userstory: "+ createUserStory.Reference);
             }
-            catch (WebException)
+            catch (WebException e)
             {
-                Console.WriteLine(RallyQueryConstant.WebExceptionMessage);
+                Console.WriteLine(e.Message);
             }
         }
+
         #endregion
 
         #region: Create Task
@@ -330,48 +364,6 @@
 
         }
 
-        #endregion
-
-        #region: Create US through List
-        //testing a list of userstories
-        public void CreateUserStoryFromList(string usWorkspace, string usProject)
-        {
-            //authenticate
-            this.EnsureRallyIsAuthenticated();
-
-            List<string> usList = new List<string>();
-            usList.Add("Item 1");
-            usList.Add("Item 2");
-            usList.Add("Item 3");
-            usList.Add("Item 4");
-
-            DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyConstant.WorkSpace] = usWorkspace;
-            toCreate[RallyConstant.Project] = usProject;
-
-            Console.WriteLine("Start");
-            try
-            {
-                #region foreach
-                //foreach (var item in usList)
-                //{
-                //    toCreate[RallyField.nameForWSorUSorTA] = usList[i];
-                //    CreateResult cr = _api.Create("HierarchicalRequirement", toCreate);
-                //}
-                #endregion
-
-                for (int i = 0; i < usList.Count; i++)
-                {
-                    toCreate[RallyConstant.Name] = usList[i];
-                    CreateResult cr = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
-                }
-            }
-            catch (WebException)
-            {
-                Console.WriteLine(RallyQueryConstant.WebExceptionMessage);
-            }
-            Console.WriteLine("End");
-        }
         #endregion
 
         #region: Sync User Stories through unread email
@@ -898,45 +890,6 @@
 
         #endregion
 
-        #region: scenraio
-        //even if duplicates are sent via email, windows does not download the duplicate
-        //x.txt != x(1).txt
-        //What if via sender and receiver communication the file is passed back and forth after making some changes
-        //if the file in the first place does not exist in the attachmentPath then we need not worry about creating folders for each attachment type
-        // we are mirroring the process of pulling emails and moviong to a processed folder
-
-        public void downloadAttachments()
-        {
-            EnsureOutlookIsAuthenticated();
-            Mailbox inbox = imap.SelectMailbox(OutlookConstant.OutlookInboxFolder);
-            int[] unreadIDs = inbox.Search(OutlookConstant.OutlookUnseenMessages);
-            int unreadMessagesLength = unreadIDs.Length;
-            string[] attachmentPaths;
-            string destinationDirectory = SyncConstant.AttachmentsProcessedDirectory;
-
-            for (int i = 0; i < unreadMessagesLength; i++)
-            {
-                Message unreadMessageObject = inbox.Fetch.MessageObject(unreadIDs[i]);
-                Console.WriteLine("Subject: " + unreadMessageObject.Subject);
-
-                if (unreadMessageObject.Attachments.Count > 0)
-                {
-                    unreadMessageObject.Attachments.StoreToFolder(SyncConstant.AttachmentsDirectory);
-                }
-            }
-            Console.WriteLine("Break");
-
-            attachmentPaths = Directory.GetFiles(SyncConstant.AttachmentsDirectory);
-
-            foreach (var file in attachmentPaths)
-            {
-                var fileName = Path.GetFileName(file);
-                Console.WriteLine("Moving File: " + fileName);
-                File.Move(file, Path.Combine(destinationDirectory, fileName));
-            }
-        }
-        #endregion
-
         #region: Sync Rally 
         public void Sync(String worskpace, string project)
         {
@@ -1088,74 +1041,6 @@
             }
 
         }
-        #endregion
-
-        #region: getIterations()
-        public void getIterations(string workspace, string project)
-        {
-
-            this.EnsureRallyIsAuthenticated();
-
-            Request iterationRequest = new Request(RallyConstant.Iteration);
-            iterationRequest.Workspace = workspace;
-            iterationRequest.Project = project;
-            iterationRequest.ProjectScopeUp = RallyConstant.ProjectScopeUp;
-            iterationRequest.ProjectScopeDown = RallyConstant.ProjectScopeDown;
-
-            try
-            {
-                iterationRequest.Fetch = new List<string>()
-                {
-                 RallyConstant.Name
-                };
-
-                iterationRequest.Query = new Query(RallyConstant.Project, Query.Operator.Equals, RallyQueryConstant.ScrumTeamSampleProject);
-                QueryResult queryResult = _api.Query(iterationRequest);
-                foreach (var iteration in queryResult.Results)
-                {
-                    Console.WriteLine(iteration[RallyConstant.Name]);
-                }
-
-            }
-            catch (WebException e)
-            {
-                Console.WriteLine(e.Message);
-            }
-        }
-        #endregion
-
-        #region: create Userstory and associate it to feature
-        /// <summary>
-        /// Feature is read only, so they have to be pre made and attached to the user stories
-        /// </summary>
-        /// <param name="workspace"></param>
-        /// <param name="project"></param>
-        /// <param name="userstory"></param>
-
-        public void CreateUserStory(string workspace, string project, string userstory)
-        {
-            //authenticate
-            this.EnsureRallyIsAuthenticated();
-
-            //DynamicJsonObject
-            DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyConstant.WorkSpace] = workspace;
-            toCreate[RallyConstant.Project] = project;
-            toCreate[RallyConstant.Name] = userstory;
-            toCreate["PortfolioItem"] = "portfolioitem/feature/49487570246";
-
-            try
-            {
-                Console.WriteLine("<<Creating US>>");
-                CreateResult createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
-                Console.WriteLine("<<Created US>>");
-            }
-            catch (WebException e)
-            {
-                Console.WriteLine(e.Message);
-            }
-        }
-
         #endregion
 
     }
