@@ -30,11 +30,11 @@ namespace Rally
         public const string FormattedId = "FormattedID";
         public const string Name = "Name";
         public const string Artifact = "Artifact";
-        public const string PortfolioItem = "PortfolioItem";
         public const string Size = "Size";
         public const string Content = "Content";
         public const string ContentType = "ContentType";
         public const string Attachment = "Attachment";
+        public const string PortfolioItem = "PortfolioItem";
         public const string AttachmentContent = "AttachmentContent";
         public const string EmailAttachment = "Email Attachment";
 

@@ -295,7 +295,6 @@
         /// <param name="userstoryDescription"></param>
         /// <param name="userstoryOwner"></param>
 
-
         public void CreateUserStory(string workspace, string project, string userstory, string userstoryDescription, string userstoryOwner)
         {
             //authenticate
@@ -309,13 +308,13 @@
             toCreate[RallyConstant.Description] = userstoryDescription;
             toCreate[RallyConstant.Owner] = userstoryOwner;
             toCreate[RallyConstant.PlanEstimate] = "1";
-            toCreate[RallyConstant.PortfolioItem] = "portfolioitem/feature/49487570246";
+            toCreate[RallyConstant.PortfolioItem] = RallyQueryConstant.FeatureShareProject;
             //toCreate[RallyConstant.Iteration] = usIteration;
 
             try
             {
                 CreateResult createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
-                Console.WriteLine("Created Userstory: "+ createUserStory.Reference);
+                Console.WriteLine("Created Userstory: " + createUserStory.Reference);
             }
             catch (WebException e)
             {
@@ -1038,6 +1037,74 @@
                 imap.Disconnect();
             }
 
+        }
+        #endregion
+
+        #region embeddedImages()
+        /// <summary>
+        /// Method to pull images that could have been copied & pasted, instead of attaching
+        /// </summary>
+        public void downlodInlineAttachments()
+        {
+            List<Message> unreadMsgCollection = new List<Message>();
+            Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
+            unreadMsgCollection.Capacity = 25;
+            string[] inlineAttachmentsPath;
+
+            this.EnsureOutlookIsAuthenticated();
+
+            var inbox = imap.SelectMailbox(OutlookConstant.OutlookInboxFolder);
+            var unread = inbox.Search(OutlookConstant.OutlookUnseenMessages);
+            Console.WriteLine("Unread Messgaes: " + unread.Length);
+
+            if (unread.Length > 0)
+            {
+                for (int i = 0; i < unread.Length; i++)
+                {
+                    Message msg = inbox.Fetch.MessageObject(unread[i]);
+                    unreadMsgCollection.Add(msg);
+                }
+
+                for (int i = 0; i < unreadMsgCollection.Count; i++)
+                {
+                    foreach (MimePart embedded in unreadMsgCollection[i].EmbeddedObjects)
+                    {
+                        var fileName = embedded.ContentName;
+                        var binary = embedded.BinaryContent;
+                        File.WriteAllBytes(SyncConstant.InlineImageDirectory + fileName, binary);
+                        //Which is always expected to be a .png extension
+                        Console.WriteLine("Downloaded: " + fileName);
+                        //here the file is download so no we convert the file to base 64 here
+                        inlineAttachmentsPath = Directory.GetFiles(SyncConstant.InlineImageDirectory);
+
+                        foreach (var file in inlineAttachmentsPath)
+                        {
+                            //convert to base 64
+                            //string base64String = fileToBase64(file);
+                            string attachmentFileName = Path.GetFileName(file);
+                            var emptyFileString = string.Empty;
+
+                            Console.WriteLine(attachmentFileName);
+
+                            //if (!(attachmentsDictionary.TryGetValue(base64String, out fileName)))
+                            //{
+                            //    attachmentsDictionary.Add(base64String, attachmentFileName);
+                            //}
+                        }
+                    }
+                }
+
+                //foreach (KeyValuePair<string, string> attachmentPair in attachmentsDictionary)
+                //{
+                //    Console.WriteLine("Key: " + attachmentPair.Key);
+                //    Console.WriteLine();
+                //    Console.WriteLine("Value: " + attachmentPair.Key);
+                //}
+            }
+            else
+            {
+                Console.WriteLine("No Unread Messages");
+            }
         }
         #endregion
 

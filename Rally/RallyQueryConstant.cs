@@ -29,9 +29,11 @@ namespace Rally
         public const string WorkspaceUcit = "/workspace/33809253647";
         public const string ScrumTeamLotteryWinners = "/project/57640961096";
         public const string ScrumTeamSampleProject = "/project/36903994832";
+        public const string ScrumTeamLabRatsFy17 = "/project/38079273075"; // do not have permisssions to create user stories for lab rats
         public const string RallyUserJostte = "/user/33809253641";
         public const string Iteration = "iteration/70430073500";
         public const string SampleUserStory = "/hierarchicalrequirement/70836533324";
-
+        public const string FeatureOarMaintenance = "portfolioitem/feature/92925227200";
+        public const string FeatureShareProject = "portfolioitem/feature/49487570246";
     }
 }

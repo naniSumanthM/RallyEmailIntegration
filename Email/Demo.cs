@@ -9,7 +9,6 @@ namespace Email
             EmailOperation operation = new EmailOperation();
             operation.downlodInlineAttachments();
 
-
             Console.ReadLine();
         }
     }

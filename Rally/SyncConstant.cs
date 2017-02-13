@@ -10,6 +10,8 @@ namespace Rally
 
         public const string AttachmentsDirectory = "C:\\Users\\maddirsh\\Desktop\\AttachmentsDirectory\\";
         public const string AttachmentsProcessedDirectory = "C:\\Users\\maddirsh\\Desktop\\Processed\\";
+        public const string InlineImageDirectory = "C:\\Users\\maddirsh\\Desktop\\InlineAttachments\\";
+
         public const string FileType = "file/";
 
     }

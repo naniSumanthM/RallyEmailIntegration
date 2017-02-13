@@ -460,7 +460,7 @@ namespace Email
                     {
                         var filename = embedded.ContentName;
                         var binary = embedded.BinaryContent;
-                        File.WriteAllBytes(Constant.AttachmentPath+filename, binary);
+                        File.WriteAllBytes(Constant.AttachmentPath + filename, binary);
                         Console.WriteLine("Downloaded: " + filename);
                     }
                 }
