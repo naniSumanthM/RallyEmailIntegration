@@ -888,7 +888,7 @@
         #endregion
 
         #region: Sync Rally 
-        public void Sync(String worskpace, string project)
+        public void Sync(String workspace, string project)
         {
             //Email variables
             List<Message> unreadMsgCollection = new List<Message>();
@@ -897,7 +897,7 @@
 
             //Rally variables
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyConstant.WorkSpace] = worskpace;
+            toCreate[RallyConstant.WorkSpace] = workspace;
             toCreate[RallyConstant.Project] = project;
             DynamicJsonObject attachmentContent = new DynamicJsonObject();
             DynamicJsonObject attachmentContainer = new DynamicJsonObject();
@@ -1044,21 +1044,36 @@
         /// <summary>
         /// Method to pull images that could have been copied & pasted, instead of attaching
         /// </summary>
-        public void downlodInlineAttachments()
+        public void downlodInlineAttachments(string workspace, string project)
         {
+            //Mail Variables
             List<Message> unreadMsgCollection = new List<Message>();
             Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
             unreadMsgCollection.Capacity = 25;
             string[] inlineAttachmentsPath;
 
+            //Rally Variables
+            DynamicJsonObject toCreate = new DynamicJsonObject();
+            toCreate[RallyConstant.WorkSpace] = workspace;
+            toCreate[RallyConstant.Project] = project;
+            DynamicJsonObject attachmentContent = new DynamicJsonObject();
+            DynamicJsonObject attachmentContainer = new DynamicJsonObject();
+            CreateResult createUserStory;
+            CreateResult attachmentContentCreateResult;
+            CreateResult attachmentContainerCreateResult;
+            string userStoryReference;
+
+            //Authentication
             this.EnsureOutlookIsAuthenticated();
+            this.EnsureRallyIsAuthenticated();
 
             var inbox = imap.SelectMailbox(OutlookConstant.OutlookInboxFolder);
             var unread = inbox.Search(OutlookConstant.OutlookUnseenMessages);
-            Console.WriteLine("Unread Messgaes: " + unread.Length);
+            Console.WriteLine("Unread Messages: " + unread.Length);
 
             if (unread.Length > 0)
             {
+                //Pupulate the unread Message List
                 for (int i = 0; i < unread.Length; i++)
                 {
                     Message msg = inbox.Fetch.MessageObject(unread[i]);
@@ -1067,39 +1082,65 @@
 
                 for (int i = 0; i < unreadMsgCollection.Count; i++)
                 {
+                    toCreate[RallyConstant.Name] = (unreadMsgCollection[i].Subject);
+                    toCreate[RallyConstant.Description] = (unreadMsgCollection[i].BodyText.Text);
+                    createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
+
                     foreach (MimePart embedded in unreadMsgCollection[i].EmbeddedObjects)
                     {
                         var fileName = embedded.ContentName;
                         var binary = embedded.BinaryContent;
-                        File.WriteAllBytes(SyncConstant.InlineImageDirectory + fileName, binary);
+                        File.WriteAllBytes(SyncConstant.InlineImageDirectory + fileName, binary); //downloads one file from the email
+
                         //Which is always expected to be a .png extension
                         Console.WriteLine("Downloaded: " + fileName);
-                        //here the file is download so no we convert the file to base 64 here
+
+                        //*ALL* the files from a given email object are downloaded here, so we reference the array
                         inlineAttachmentsPath = Directory.GetFiles(SyncConstant.InlineImageDirectory);
 
                         foreach (var file in inlineAttachmentsPath)
                         {
                             //convert to base 64
-                            //string base64String = fileToBase64(file);
+                            string base64String = fileToBase64(file);
                             string attachmentFileName = Path.GetFileName(file);
                             var emptyFileString = string.Empty;
 
-                            Console.WriteLine(attachmentFileName);
+                            Console.WriteLine("Adding to Dictionary: " + attachmentFileName);
 
-                            //if (!(attachmentsDictionary.TryGetValue(base64String, out fileName)))
-                            //{
-                            //    attachmentsDictionary.Add(base64String, attachmentFileName);
-                            //}
+                            if (!(attachmentsDictionary.TryGetValue(base64String, out fileName)))
+                            {
+                                attachmentsDictionary.Add(base64String, attachmentFileName);
+                            }
+
+                            //once the dictionary is populated, clear the file for the next email object iteration
+                            File.Delete(file);
                         }
-                    }
-                }
 
-                //foreach (KeyValuePair<string, string> attachmentPair in attachmentsDictionary)
-                //{
-                //    Console.WriteLine("Key: " + attachmentPair.Key);
-                //    Console.WriteLine();
-                //    Console.WriteLine("Value: " + attachmentPair.Key);
-                //}
+                        //now that the dictionary is populated for each inline image, we push to Rally
+
+                        foreach (KeyValuePair<string, string> attachmentPair in attachmentsDictionary)
+                        {
+                            //create attachment content
+                            attachmentContent[RallyConstant.Content] = attachmentPair.Key;
+                            attachmentContentCreateResult = _api.Create(RallyConstant.AttachmentContent, attachmentContent);
+                            userStoryReference = attachmentContentCreateResult.Reference;
+
+                            //create attachment contianer
+                            attachmentContainer[RallyConstant.Artifact] = createUserStory.Reference;
+                            attachmentContainer[RallyConstant.Content] = userStoryReference;
+                            attachmentContainer[RallyConstant.Name] = attachmentPair.Value;
+                            attachmentContainer[RallyConstant.Description] = RallyConstant.EmailAttachment;
+                            attachmentContainer[RallyConstant.ContentType] = "file/";
+
+                            //Create & associate the attachment
+                            attachmentContainerCreateResult = _api.Create(RallyConstant.Attachment, attachmentContainer);
+                        }
+
+                        attachmentsDictionary.Clear();
+                    }
+
+                    //this only clears the dictionary (x) unred email times.
+                }
             }
             else
             {
