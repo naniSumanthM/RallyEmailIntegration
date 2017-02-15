@@ -1135,7 +1135,8 @@
                             //Create & associate the attachment
                             attachmentContainerCreateResult = _api.Create(RallyConstant.Attachment, attachmentContainer);
                         }
-
+                        //clear the dictionary for each parse mime part object, not for each email
+                        //unlike the other example where ALL the images are parsed from a given email object in one go for one iteration
                         attachmentsDictionary.Clear();
                     }
 
