@@ -8,7 +8,7 @@ namespace Rally
         {
             RallyOperation operation = new RallyOperation(RallyConstant.UserName, RallyConstant.Password);
 
-            operation.downlodInlineAttachments(RallyQueryConstant.WorkspaceZScratch, RallyQueryConstant.ScrumTeamSampleProject);
+            operation.Sync(RallyQueryConstant.WorkspaceZScratch, RallyQueryConstant.ScrumTeamSampleProject);
 
             Console.ReadLine();
         }
