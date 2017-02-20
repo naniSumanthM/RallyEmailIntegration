@@ -101,6 +101,7 @@
     <Compile Include="RallyQueryConstant.cs" />
     <Compile Include="RallyConstant.cs" />
     <Compile Include="RallyOperation.cs" />
+    <Compile Include="Sync.cs" />
     <Compile Include="SyncConstant.cs" />
   </ItemGroup>
   <ItemGroup>
