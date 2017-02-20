@@ -14,9 +14,8 @@
 
     class Sync
     {
-        public RallyRestApi _rallyApi;
-        public Imap4Client _imap4CLient;
-
+        private RallyRestApi _rallyApi;
+        private Imap4Client _imap4Client;
         public string RallyUserName { get; set; }
         public string RallyPassword { get; set; }
         public string OutlookUserName { get; set; }
@@ -25,20 +24,36 @@
         public Sync(string rallyUserName, string rallyPassword, string outlookUserName, string outlookPassword)
         {
             _rallyApi = new RallyRestApi();
-            _imap4CLient = new Imap4Client();
+            _imap4Client = new Imap4Client();
             this.OutlookUserName = outlookUserName;
             this.OutlookPassword = outlookPassword;
             this.RallyUserName = rallyUserName;
             this.RallyPassword = rallyPassword;
         }
 
-        public void LoginToOutlook()
+        private Mailbox _inbox;
+        private int[] _unreadMsg;
+        private List<Message> _unreadMsgCollection = new List<Message>();
+        private FlagCollection _markAsUnreadFlag;
+        private Dictionary<string, string> _attachmentsDictionary = new Dictionary<string, string>();
+        private DynamicJsonObject _toCreate = new DynamicJsonObject();
+        private DynamicJsonObject _attachmentContent = new DynamicJsonObject();
+        private DynamicJsonObject _attachmentContainer = new DynamicJsonObject();
+        private CreateResult _createUserStory;
+        private CreateResult _attachmentContentCreateResult;
+        private CreateResult _attachmentContainerCreateResult;
+        private string _base64String;
+        private string _attachmentFileName;
+        private string[] _attachmentPaths;
+        private string _userStoryReference;
+
+        private void LoginToOutlook()
         {
-            _imap4CLient.ConnectSsl(OutlookConstant.OutlookHost, OutlookConstant.OutlookPort);
-            _imap4CLient.Login(this.OutlookUserName, this.OutlookPassword);
+            _imap4Client.ConnectSsl(OutlookConstant.OutlookHost, OutlookConstant.OutlookPort);
+            _imap4Client.Login(this.OutlookUserName, this.OutlookPassword);
         }
 
-        public void LoginToRally()
+        private void LoginToRally()
         {
             if (this._rallyApi.AuthenticationState != RallyRestApi.AuthenticationResult.Authenticated)
             {
@@ -46,129 +61,35 @@
             }
         }
 
-        public static string FileToBase64(string attachment)
+        private void FetchUnreadMessages(int[] unread, Mailbox inbox)
+        {
+            for (int i = 0; i < unread.Length; i++)
+            {
+                Message msg = inbox.Fetch.MessageObject(unread[i]);
+                _unreadMsgCollection.Add(msg);
+            }
+        }
+
+        private static string FileToBase64(string attachment)
         {
             Byte[] attachmentBytes = File.ReadAllBytes(attachment);
             string base64EncodedString = Convert.ToBase64String(attachmentBytes);
             return base64EncodedString;
         }
 
-        //Email variables
-        List<Message> unreadMsgCollection = new List<Message>();
-        Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
-
-        //Rally variables
-        DynamicJsonObject toCreate = new DynamicJsonObject();
-        DynamicJsonObject attachmentContent = new DynamicJsonObject();
-        DynamicJsonObject attachmentContainer = new DynamicJsonObject();
-        CreateResult createUserStory;
-        CreateResult attachmentContentCreateResult;
-        CreateResult attachmentContainerCreateResult;
-
-        //base 64 conversion variables
-        string base64String;
-        string attachmentFileName;
-        string[] attachmentPaths;
-        string userStoryReference;
-
-        public void SyncUserStories(String workspace, string project)
-        {
-            toCreate[RallyConstant.WorkSpace] = workspace;
-            toCreate[RallyConstant.Project] = project;
-
-            try
-            {
-                LoginToOutlook();
-                LoginToRally();
-
-                Mailbox inbox = _imap4CLient.SelectMailbox(OutlookConstant.OutlookInboxFolder);
-                int[] unread = inbox.Search(OutlookConstant.OutlookUnseenMessages);
-                FlagCollection markAsUnreadFlag = new FlagCollection();
-
-                if (unread.Length > 0)
-                {
-                    Console.WriteLine("Syncing: " + unread.Length + " Unread Messages");
-                    FetchUnreadMessages(unread, inbox);
-
-                    //Iterate through the collection 1) Create the user story 2) Check for attachments 3) Convert attachments to base 64 4)Delete attachments once pushed 
-                    for (int i = 0; i < unreadMsgCollection.Count; i++)
-                    {
-                        //stage the user story
-                        if (unreadMsgCollection[i].Subject.Equals(""))
-                        {
-                            unreadMsgCollection[i].Subject = OutlookConstant.NoSubject;
-                        }
-                        toCreate[RallyConstant.Name] = (unreadMsgCollection[i].Subject);
-                        toCreate[RallyConstant.Description] = (unreadMsgCollection[i].BodyText.Text);
-                        createUserStory = _rallyApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
-
-                        //check to see if message has attachments & then store them
-                        if (unreadMsgCollection[i].Attachments.Count > 0)
-                        {
-                            //Do all the attachments from the email object get stored here?? _No it has to complete one iteration
-                            unreadMsgCollection[i].Attachments.StoreToFolder(SyncConstant.AttachmentsDirectory);
-                        }
-
-                        //reference the path where the attachments live for the [ith] message
-                        attachmentPaths = Directory.GetFiles(SyncConstant.AttachmentsDirectory);
-
-                        //Convert each attachment to base64, populate the map, and move the file
-                        PopulateAttachmentsDictionary();
-                        PushAttachments(attachmentsDictionary, attachmentContent, attachmentContainer, createUserStory);
-                        attachmentsDictionary.Clear();
-                    }
-
-                    //Move mail to processed folder and mark each mail object as unread
-                    MarkAsUnread(unread, markAsUnreadFlag, inbox);
-
-                    Console.WriteLine("Created " + unread.Length + " User Stories");
-                }
-                else
-                {
-                    Console.WriteLine("No Unread Messages Found...");
-                }
-            }
-            catch (Imap4Exception i)
-            {
-                Console.WriteLine(i.Message);
-            }
-            catch (IOException i)
-            {
-                Console.WriteLine(i.Message);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-            }
-            finally
-            {
-                _imap4CLient.Disconnect();
-            }
-
-        }
-
-        private void FetchUnreadMessages(int[] unread, Mailbox inbox)
-        {
-            for (int i = 0; i < unread.Length; i++)
-            {
-                Message msg = inbox.Fetch.MessageObject(unread[i]);
-                unreadMsgCollection.Add(msg);
-            }
-        }
-
         private void PopulateAttachmentsDictionary()
         {
-            foreach (var file in attachmentPaths)
+            foreach (var file in _attachmentPaths)
             {
                 //Converting attachments to base 64
-                base64String = FileToBase64(file);
-                attachmentFileName = Path.GetFileName(file);
+                _base64String = FileToBase64(file);
+                _attachmentFileName = Path.GetFileName(file);
                 var fileName = string.Empty;
 
                 //populate the dictionary - eliminate adding duplicate files
-                if (!(attachmentsDictionary.TryGetValue(base64String, out fileName)))
+                if (!(_attachmentsDictionary.TryGetValue(_base64String, out fileName)))
                 {
-                    attachmentsDictionary.Add(base64String, attachmentFileName);
+                    _attachmentsDictionary.Add(_base64String, _attachmentFileName);
                 }
 
                 Console.WriteLine("Uploading: " + file);
@@ -176,8 +97,7 @@
             }
         }
 
-        private void PushAttachments(Dictionary<string, string> attachmentsDictionary, DynamicJsonObject attachmentContent,
-                                     DynamicJsonObject attachmentContainer, CreateResult createUserStory)
+        private void PushAttachments(Dictionary<string, string> attachmentsDictionary, DynamicJsonObject attachmentContent, DynamicJsonObject attachmentContainer, CreateResult createUserStory)
         {
             foreach (KeyValuePair<string, string> attachmentPair in attachmentsDictionary)
             {
@@ -185,18 +105,18 @@
                 {
                     //create attachment content
                     attachmentContent[RallyConstant.Content] = attachmentPair.Key;
-                    attachmentContentCreateResult = _rallyApi.Create(RallyConstant.AttachmentContent, attachmentContent);
-                    userStoryReference = attachmentContentCreateResult.Reference;
+                    _attachmentContentCreateResult = _rallyApi.Create(RallyConstant.AttachmentContent, attachmentContent);
+                    _userStoryReference = _attachmentContentCreateResult.Reference;
 
                     //create attachment contianer
                     attachmentContainer[RallyConstant.Artifact] = createUserStory.Reference;
-                    attachmentContainer[RallyConstant.Content] = userStoryReference;
+                    attachmentContainer[RallyConstant.Content] = _userStoryReference;
                     attachmentContainer[RallyConstant.Name] = attachmentPair.Value;
                     attachmentContainer[RallyConstant.Description] = RallyConstant.EmailAttachment;
                     attachmentContainer[RallyConstant.ContentType] = "file/";
 
                     //Create & associate the attachment
-                    attachmentContainerCreateResult = _rallyApi.Create(RallyConstant.Attachment, attachmentContainer);
+                    _attachmentContainerCreateResult = _rallyApi.Create(RallyConstant.Attachment, attachmentContainer);
                 }
                 catch (WebException e)
                 {
@@ -214,5 +134,78 @@
                 inbox.MoveMessage(item, OutlookConstant.OutlookProcessedFolder);
             }
         }
+
+        private int UnreadMessageLength(int[] unread)
+        {
+            return unread.Length;
+        }
+
+        public void SyncUserStories(string workspace, string project)
+        {
+            _unreadMsgCollection.Capacity = 25;
+            _toCreate[RallyConstant.WorkSpace] = workspace;
+            _toCreate[RallyConstant.Project] = project;
+
+            try
+            {
+                LoginToOutlook();
+                LoginToRally();
+
+                _inbox = _imap4Client.SelectMailbox(OutlookConstant.OutlookInboxFolder);
+                _unreadMsg = _inbox.Search(OutlookConstant.OutlookUnseenMessages);
+                _markAsUnreadFlag = new FlagCollection();
+
+                if (UnreadMessageLength(_unreadMsg) > 0)
+                {
+                    Console.WriteLine("Syncing: " + _unreadMsg.Length + " Unread Messages");
+                    FetchUnreadMessages(_unreadMsg, _inbox);
+
+                    for (int i = 0; i < _unreadMsgCollection.Count; i++)
+                    {
+                        if (string.IsNullOrWhiteSpace(_unreadMsgCollection[i].Subject))
+                        {
+                            _unreadMsgCollection[i].Subject = OutlookConstant.NoSubject;
+                        }
+                        _toCreate[RallyConstant.Name] = (_unreadMsgCollection[i].Subject);
+                        _toCreate[RallyConstant.Description] = (_unreadMsgCollection[i].BodyText.Text);
+                        _createUserStory = _rallyApi.Create(RallyConstant.HierarchicalRequirement, _toCreate);
+
+                        if (_unreadMsgCollection[i].Attachments.Count > 0) //can return a boolean
+                        {
+                            _unreadMsgCollection[i].Attachments.StoreToFolder(SyncConstant.AttachmentsDirectory);
+                        }
+
+                        _attachmentPaths = Directory.GetFiles(SyncConstant.AttachmentsDirectory);
+
+                        PopulateAttachmentsDictionary();
+                        PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
+                        _attachmentsDictionary.Clear();
+                    }
+                    MarkAsUnread(_unreadMsg, _markAsUnreadFlag, _inbox);
+                    Console.WriteLine("Created " + _unreadMsg.Length + " User Stories");
+                }
+                else
+                {
+                    Console.WriteLine("Inbox does not contain unread messages");
+                }
+            }
+            catch (Imap4Exception imap)
+            {
+                Console.WriteLine(imap.Message);
+            }
+            catch (IOException io)
+            {
+                Console.WriteLine(io.Message);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            finally
+            {
+                _imap4Client.Disconnect();
+            }
+        }
+
     }
 }
