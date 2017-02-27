@@ -223,8 +223,6 @@
                             _unreadMsgCollection[i].Attachments.StoreToFolder(SyncConstant.AttachmentsDirectory);
                         }
 
-                        //_attachmentPaths = Directory.GetFiles(SyncConstant.AttachmentsDirectory);
-
                         PopulateAttachmentsDictionary();
                         PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
                         _attachmentsDictionary.Clear();

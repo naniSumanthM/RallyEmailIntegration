@@ -980,7 +980,7 @@ namespace Rally
                             attachmentContainer[RallyConstant.Name] = attachmentPair.Value;
                             attachmentContainer[RallyConstant.Description] = RallyConstant.EmailAttachment;
                             attachmentContainer[RallyConstant.ContentType] = "file/";
-
+                            
                             //Create & associate the attachment
                             attachmentContainerCreateResult = _api.Create(RallyConstant.Attachment, attachmentContainer);
                         }
@@ -988,9 +988,8 @@ namespace Rally
                         //unlike the other example where ALL the images are parsed from a given email object in one go for one iteration
                         attachmentsDictionary.Clear();
                     }
-
-                    //this only clears the dictionary (x) unred email times.
                 }
+                Console.WriteLine("Created "+unread.Length + " User stories with Inline Images");
             }
             else
             {
@@ -1150,5 +1149,4 @@ namespace Rally
     }
 
 }
-
 
