@@ -16,7 +16,6 @@
     {
         private RallyRestApi _rallyApi;
         private Imap4Client _imap4Client;
-
         public string RallyUserName { get; set; }
         public string RallyPassword { get; set; }
         public string OutlookUserName { get; set; }
@@ -187,7 +186,7 @@
         /// <param name="project"></param>
         public void SyncUserStories(string workspace, string project)
         {
-            _unreadMsgCollection.Capacity = 25;
+            _unreadMsgCollection.Capacity = UnreadMessageLength(_unreadMsg);
             _toCreate[RallyConstant.WorkSpace] = workspace;
             _toCreate[RallyConstant.Project] = project;
 
@@ -207,7 +206,6 @@
 
                     for (int i = 0; i < _unreadMsgCollection.Count; i++)
                     {
-                        //If the email object does not have a subject
                         if (string.IsNullOrWhiteSpace(_unreadMsgCollection[i].Subject))
                         {
                             _unreadMsgCollection[i].Subject = OutlookConstant.NoSubject;
@@ -218,7 +216,7 @@
                         _toCreate[RallyConstant.PortfolioItem] = RallyQueryConstant.FeatureShareProject;
                         _createUserStory = _rallyApi.Create(RallyConstant.HierarchicalRequirement, _toCreate);
 
-                        if (_unreadMsgCollection[i].Attachments.Count > 0) //can return a boolean
+                        if (_unreadMsgCollection[i].Attachments.Count > 0) 
                         {
                             _unreadMsgCollection[i].Attachments.StoreToFolder(SyncConstant.AttachmentsDirectory);
                         }
@@ -243,6 +241,10 @@
             catch (IOException io)
             {
                 Console.WriteLine(io.Message);
+            }
+            catch (WebException we)
+            {
+                Console.WriteLine(we.Message);
             }
             catch (Exception e)
             {

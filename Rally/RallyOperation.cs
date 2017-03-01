@@ -934,12 +934,15 @@ namespace Rally
                     toCreate[RallyConstant.Name] = (unreadMsgCollection[i].Subject);
                     toCreate[RallyConstant.Description] = (unreadMsgCollection[i].BodyText.Text);
                     createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
-
+              
                     foreach (MimePart embedded in unreadMsgCollection[i].EmbeddedObjects)
                     {
                         var fileName = embedded.ContentName;
                         var binary = embedded.BinaryContent;
                         File.WriteAllBytes(SyncConstant.InlineImageDirectory + fileName, binary); //downloads one file from the email
+
+                  //} //the images can all be downloaded once, but if they clash with the fileNames that are attached, they will fail
+                      //mechanism for identifying duplicate file names with unique base64 string
 
                         //Which is always expected to be a .png extension
                         Console.WriteLine("Downloaded: " + fileName);
