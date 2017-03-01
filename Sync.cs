@@ -224,7 +224,7 @@
                             _unreadMsgCollection[i].Attachments.StoreToFolder(SyncConstant.AttachmentsDirectory);
                         }
 
-                        #region inLineAttachments
+                        #region inLineImage
                         if (_unreadMsgCollection[i].EmbeddedObjects.Count > 0)
                         {
                             foreach (MimePart embeddedImg in _unreadMsgCollection[i].EmbeddedObjects)
