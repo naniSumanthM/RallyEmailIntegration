@@ -947,7 +947,7 @@ namespace Rally
                         //Which is always expected to be a .png extension
                         Console.WriteLine("Downloaded: " + fileName);
 
-                        //*ALL* the files from a given email object are downloaded here, so we reference the array
+                        //only 1 file from the email is downloaded here at once, so we continue this proecedure for the number of emails there are in the mailbox
                         inlineAttachmentsPath = Directory.GetFiles(SyncConstant.InlineImageDirectory);
 
                         foreach (var file in inlineAttachmentsPath)

@@ -186,7 +186,7 @@
         /// <param name="project"></param>
         public void SyncUserStories(string workspace, string project)
         {
-            _unreadMsgCollection.Capacity = UnreadMessageLength(_unreadMsg);
+            _unreadMsgCollection.Capacity = 25;
             _toCreate[RallyConstant.WorkSpace] = workspace;
             _toCreate[RallyConstant.Project] = project;
 
@@ -220,6 +220,41 @@
                         {
                             _unreadMsgCollection[i].Attachments.StoreToFolder(SyncConstant.AttachmentsDirectory);
                         }
+
+                        #region inLineImage
+                        if (_unreadMsgCollection[i].EmbeddedObjects.Count > 0)
+                        {
+                            foreach (MimePart embeddedImg in _unreadMsgCollection[i].EmbeddedObjects)
+                            {
+                                var fileName = embeddedImg.ContentName;
+                                var binaryForm = embeddedImg.BinaryContent;
+                                File.WriteAllBytes(SyncConstant.InlineImageDirectory + fileName, binaryForm);
+
+                                string[] inlineAttachmentsPath = Directory.GetFiles(SyncConstant.InlineImageDirectory);
+
+                                foreach (var file in inlineAttachmentsPath)
+                                {
+                                    //convert to base 64
+                                    string base64String = FileToBase64(file);
+                                    string attachmentFileName = Path.GetFileName(file);
+                                    var emptyFileString = string.Empty;
+
+                                    Console.WriteLine("Adding to Dictionary: " + attachmentFileName);
+
+                                    if (!(_attachmentsDictionary.TryGetValue(base64String, out fileName)))
+                                    {
+                                        _attachmentsDictionary.Add(base64String, attachmentFileName);
+                                    }
+
+                                    //once the dictionary is populated, clear the file for the next email object iteration
+                                    File.Delete(file);
+                                }
+
+                                PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
+                                _attachmentsDictionary.Clear();
+                            }
+                        }
+                        #endregion
 
                         PopulateAttachmentsDictionary();
                         PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
