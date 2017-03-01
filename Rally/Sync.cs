@@ -44,8 +44,11 @@
         private CreateResult _attachmentContainerCreateResult;
         private string _base64String;
         private string _attachmentFileName;
-        private string[] _attachmentPaths;
         private string _userStoryReference;
+        private string _inlineFileName;
+        private string[] _attachmentPaths;
+        private string[] _inlineAttachmentPaths;
+        private byte[] _inlineFileBinaryContent;
 
         /// <summary>
         /// Authenticate with Outlook with valid credentials.
@@ -226,30 +229,8 @@
                         {
                             foreach (MimePart embeddedImg in _unreadMsgCollection[i].EmbeddedObjects)
                             {
-                                var fileName = embeddedImg.ContentName;
-                                var binaryForm = embeddedImg.BinaryContent;
-                                File.WriteAllBytes(SyncConstant.InlineImageDirectory + fileName, binaryForm);
-
-                                string[] inlineAttachmentsPath = Directory.GetFiles(SyncConstant.InlineImageDirectory);
-
-                                foreach (var file in inlineAttachmentsPath)
-                                {
-                                    //convert to base 64
-                                    string base64String = FileToBase64(file);
-                                    string attachmentFileName = Path.GetFileName(file);
-                                    var emptyFileString = string.Empty;
-
-                                    Console.WriteLine("Adding to Dictionary: " + attachmentFileName);
-
-                                    if (!(_attachmentsDictionary.TryGetValue(base64String, out fileName)))
-                                    {
-                                        _attachmentsDictionary.Add(base64String, attachmentFileName);
-                                    }
-
-                                    //once the dictionary is populated, clear the file for the next email object iteration
-                                    File.Delete(file);
-                                }
-
+                                DownloadInlineAttachments(embeddedImg);
+                                PopulateInlineAttachments();
                                 PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
                                 _attachmentsDictionary.Clear();
                             }
@@ -291,5 +272,33 @@
             }
         }
 
+        private void PopulateInlineAttachments()
+        {
+            _inlineAttachmentPaths = Directory.GetFiles(SyncConstant.InlineImageDirectory);
+
+            foreach (var file in _inlineAttachmentPaths)
+            {
+                //convert to base 64
+                string base64String = FileToBase64(file);
+                string attachmentFileName = Path.GetFileName(file);
+                var emptyFileString = string.Empty;
+
+                Console.WriteLine("Adding to Dictionary: " + attachmentFileName);
+
+                if (!(_attachmentsDictionary.TryGetValue(base64String, out _inlineFileName)))
+                {
+                    _attachmentsDictionary.Add(base64String, attachmentFileName);
+                }
+
+                File.Delete(file);
+            }
+        }
+
+        private void DownloadInlineAttachments(MimePart embeddedImg)
+        {
+            _inlineFileName = embeddedImg.ContentName;
+            _inlineFileBinaryContent = embeddedImg.BinaryContent;
+            File.WriteAllBytes(SyncConstant.InlineImageDirectory + _inlineFileName, _inlineFileBinaryContent);
+        }
     }
 }
