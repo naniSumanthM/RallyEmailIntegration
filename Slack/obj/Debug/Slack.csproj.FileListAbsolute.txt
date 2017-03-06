@@ -1,0 +1,8 @@
+C:\Users\maddirsh\Desktop\IntegrationService\Slack\bin\Debug\Slack.exe.config
+C:\Users\maddirsh\Desktop\IntegrationService\Slack\bin\Debug\Slack.exe
+C:\Users\maddirsh\Desktop\IntegrationService\Slack\bin\Debug\Slack.pdb
+C:\Users\maddirsh\Desktop\IntegrationService\Slack\bin\Debug\Newtonsoft.Json.dll
+C:\Users\maddirsh\Desktop\IntegrationService\Slack\bin\Debug\Newtonsoft.Json.xml
+C:\Users\maddirsh\Desktop\IntegrationService\Slack\obj\Debug\Slack.csprojResolveAssemblyReference.cache
+C:\Users\maddirsh\Desktop\IntegrationService\Slack\obj\Debug\Slack.exe
+C:\Users\maddirsh\Desktop\IntegrationService\Slack\obj\Debug\Slack.pdb
