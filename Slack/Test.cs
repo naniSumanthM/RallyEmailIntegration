@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Slack
 {
@@ -10,13 +6,18 @@ namespace Slack
     {
         static void Main(string[] args)
         {
-            string urlWithAccessToken = "https://hooks.slack.com/services/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";
-
-            SlackClient client = new SlackClient(urlWithAccessToken);
-
+            SlackClient client = new SlackClient(SlackConstant.webhookURL);
             client.PostMessage(username: "sumanth", text: "SlackBot", channel: "#general");
+
+
 
             Console.ReadLine();
         }
     }
 }
+
+
+//can iterate throgh the list of messages, create the user story, and create a slack notification with the title of the user story
+//THis might become spammy becuase users cannot see the story from slack.
+
+//Purpose: 
