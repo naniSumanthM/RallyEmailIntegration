@@ -18,7 +18,7 @@ public class SlackClient
     }
 
     //Post a message using simple strings  
-    public void PostMessage(string text, string username, string channel)
+    public void PostMessage(string channel, string username, string text)
     {
         Payload payload = new Payload()
         {

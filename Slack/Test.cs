@@ -8,15 +8,12 @@ namespace Slack
         {
             SlackClient client = new SlackClient(SlackConstant.webhookURL);
 
-            for (int i = 0; i < 5; i++)
-            {
                 client.PostMessage
                    (
+                       channel: "#general",
                        username: "sumanth",
-                       text: "Notification Service"+i,
-                       channel: "#general"
+                       text: "Need to add some front end"
                    );
-            }
 
             Console.ReadLine();
         }

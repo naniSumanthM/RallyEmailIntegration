@@ -13,4 +13,5 @@ public class Payload
 
     [JsonProperty(SlackConstant.text)]
     public string Text { get; set; }
+
 }
