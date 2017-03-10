@@ -57,3 +57,8 @@ C:\Users\maddirsh\Desktop\IntegrationService\Rally\bin\Debug\Rally.RestApi.xml
 C:\Users\maddirsh\Desktop\IntegrationService\Rally\obj\Debug\ConsoleApplication1.exe
 C:\Users\maddirsh\Desktop\IntegrationService\Rally\obj\Debug\ConsoleApplication1.pdb
 C:\Users\maddirsh\Desktop\IntegrationService\Rally\obj\Debug\Rally.csprojResolveAssemblyReference.cache
+C:\Users\maddirsh\Desktop\IntegrationService\Rally\bin\Debug\RestSharp.dll
+C:\Users\maddirsh\Desktop\IntegrationService\Rally\bin\Debug\ServiceStack.Text.dll
+C:\Users\maddirsh\Desktop\IntegrationService\Rally\bin\Debug\Slack.Webhooks.dll
+C:\Users\maddirsh\Desktop\IntegrationService\Rally\bin\Debug\RestSharp.xml
+C:\Users\maddirsh\Desktop\IntegrationService\Rally\bin\Debug\ServiceStack.Text.xml

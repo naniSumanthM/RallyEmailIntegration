@@ -1,4 +1,6 @@
-﻿namespace Rally
+﻿using Slack.Webhooks;
+
+namespace Rally
 {
     #region: System Libraries
     using System;
@@ -49,6 +51,10 @@
         private string[] _attachmentPaths;
         private string[] _inlineAttachmentPaths;
         private byte[] _inlineFileBinaryContent;
+
+        private SlackClient client = new SlackClient("https://hooks.slack.com/services/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", 100);
+        private string slackAttachmentString;
+
 
         /// <summary>
         /// Authenticate with Outlook with valid credentials.
@@ -183,6 +189,43 @@
         }
 
         /// <summary>
+        /// Inline attachments are downloaded and written to a directory on home "inlineAttachments"
+        /// </summary>
+        /// <param name="embeddedImg"></param>
+        private void DownloadInlineAttachments(MimePart embeddedImg)
+        {
+            _inlineFileName = embeddedImg.ContentName;
+            _inlineFileBinaryContent = embeddedImg.BinaryContent;
+            File.WriteAllBytes(SyncConstant.InlineImageDirectory + _inlineFileName, _inlineFileBinaryContent);
+        }
+
+        ///<summary>
+        /// Parses each inline image attached in the email and populates the dictionary
+        /// </summary>
+        private void PopulateInlineAttachments()
+        {
+            _inlineAttachmentPaths = Directory.GetFiles(SyncConstant.InlineImageDirectory);
+
+            foreach (var file in _inlineAttachmentPaths)
+            {
+                //convert to base 64
+                string base64String = FileToBase64(file);
+                string attachmentFileName = Path.GetFileName(file);
+                var emptyFileString = string.Empty;
+
+                Console.WriteLine("Adding to Dictionary: " + attachmentFileName);
+
+                if (!(_attachmentsDictionary.TryGetValue(base64String, out _inlineFileName)))
+                {
+                    _attachmentsDictionary.Add(base64String, attachmentFileName);
+                }
+
+                File.Delete(file);
+            }
+        }
+
+
+        /// <summary>
         /// Parses unread email objects, and creates user stories with attachments from the data provided in an email object
         /// </summary>
         /// <param name="workspace"></param>
@@ -219,7 +262,7 @@
                         _toCreate[RallyConstant.PortfolioItem] = RallyQueryConstant.FeatureShareProject;
                         _createUserStory = _rallyApi.Create(RallyConstant.HierarchicalRequirement, _toCreate);
 
-                        if (_unreadMsgCollection[i].Attachments.Count > 0) 
+                        if (_unreadMsgCollection[i].Attachments.Count > 0)
                         {
                             _unreadMsgCollection[i].Attachments.StoreToFolder(SyncConstant.AttachmentsDirectory);
                         }
@@ -240,6 +283,38 @@
                         PopulateAttachmentsDictionary();
                         PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
                         _attachmentsDictionary.Clear();
+                       
+                        #region slack
+                        //Slack notificiation for each message
+                        SlackMessage message = new SlackMessage
+                        {
+                            Channel = "#general",
+                            Text = "*Rally Notification*",
+                            Username = "sumanth"
+                        };
+
+                        //Text = "US667: <https://rally1.rallydev.com/#/36903994832ud/detail/userstory/96328719420 | User Story Title >",
+                        slackAttachmentString = String.Format("User Story: <{0} | {1} >", _userStoryReference, _unreadMsgCollection[i].Subject);
+                        var slackAttachment = new SlackAttachment
+                        {
+                            Fallback = "New open task [Urgent]: <http://url_to_task|Test out Slack message attachments>",
+                            Text = slackAttachmentString,
+                            Color = "#4ef442",
+                            Fields =
+                            new List<SlackField>
+                            {
+                                new SlackField
+                                {
+                                    Value = _unreadMsgCollection[i].BodyText.Text
+                                }
+                            }
+                        };
+
+                        //add attachmentList to message
+                        message.Attachments = new List<SlackAttachment> { slackAttachment };
+                        //post to slack server
+                        client.Post(message); 
+                        #endregion
                     }
 
                     MarkAsUnread(_unreadMsg, _markAsUnreadFlag, _inbox);
@@ -272,33 +347,5 @@
             }
         }
 
-        private void PopulateInlineAttachments()
-        {
-            _inlineAttachmentPaths = Directory.GetFiles(SyncConstant.InlineImageDirectory);
-
-            foreach (var file in _inlineAttachmentPaths)
-            {
-                //convert to base 64
-                string base64String = FileToBase64(file);
-                string attachmentFileName = Path.GetFileName(file);
-                var emptyFileString = string.Empty;
-
-                Console.WriteLine("Adding to Dictionary: " + attachmentFileName);
-
-                if (!(_attachmentsDictionary.TryGetValue(base64String, out _inlineFileName)))
-                {
-                    _attachmentsDictionary.Add(base64String, attachmentFileName);
-                }
-
-                File.Delete(file);
-            }
-        }
-
-        private void DownloadInlineAttachments(MimePart embeddedImg)
-        {
-            _inlineFileName = embeddedImg.ContentName;
-            _inlineFileBinaryContent = embeddedImg.BinaryContent;
-            File.WriteAllBytes(SyncConstant.InlineImageDirectory + _inlineFileName, _inlineFileBinaryContent);
-        }
     }
 }
