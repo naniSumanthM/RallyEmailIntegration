@@ -37,6 +37,12 @@ namespace Rally
         public const string PortfolioItem = "PortfolioItem";
         public const string AttachmentContent = "AttachmentContent";
         public const string EmailAttachment = "Email Attachment";
+        public const string UserStoryUrlFormat = "https://rally1.rallydev.com/#/detail/userstory/";
+        public const string HexColor = "#4ef442";
+        public const string SlackApiToken = "https://hooks.slack.com/services/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";
+        public const string SlackNotificationText = "*Rally Notification*";
+        public const string SlackChannel = "#general";
+        public const string SlackUser = "sumanth";
 
         //Login fields
         public const string UserName = "maddirsh@mail.uc.edu";

@@ -18,15 +18,25 @@ namespace Rally
     {
         private RallyRestApi _rallyApi;
         private Imap4Client _imap4Client;
+        private SlackClient _slackClient;
+
         public string RallyUserName { get; set; }
         public string RallyPassword { get; set; }
         public string OutlookUserName { get; set; }
         public string OutlookPassword { get; set; }
 
+        /// <summary>
+        /// Default Constrcutor will authenticate with Rally, Outlook, Slack
+        /// </summary>
+        /// <param name="rallyUserName"></param>
+        /// <param name="rallyPassword"></param>
+        /// <param name="outlookUserName"></param>
+        /// <param name="outlookPassword"></param>
         public Sync(string rallyUserName, string rallyPassword, string outlookUserName, string outlookPassword)
         {
             _rallyApi = new RallyRestApi();
             _imap4Client = new Imap4Client();
+            _slackClient = new SlackClient(RallyConstant.SlackApiToken, 100);
             this.OutlookUserName = outlookUserName;
             this.OutlookPassword = outlookPassword;
             this.RallyUserName = rallyUserName;
@@ -51,10 +61,10 @@ namespace Rally
         private string[] _attachmentPaths;
         private string[] _inlineAttachmentPaths;
         private byte[] _inlineFileBinaryContent;
-
-        private SlackClient client = new SlackClient("https://hooks.slack.com/services/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", 100);
-        private string slackAttachmentString;
-
+        private string _objectId;
+        private string _userStoryUrl;
+        private string _slackAttachmentString;
+        
         /// <summary>
         /// Authenticate with Outlook with valid credentials.
         /// </summary>
@@ -224,6 +234,49 @@ namespace Rally
         }
 
         /// <summary>
+        /// Processes Each Inline Image attached within an email
+        /// </summary>
+        /// <param name="i"></param>
+        private void ProcessInlineAttachments(int i)
+        {
+            foreach (MimePart embeddedImg in _unreadMsgCollection[i].EmbeddedObjects)
+            {
+                DownloadInlineAttachments(embeddedImg);
+                PopulateInlineAttachments();
+                PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
+                _attachmentsDictionary.Clear();
+            }
+        }
+
+        /// <summary>
+        /// Pushes a notification into Slack for each user story created
+        /// </summary>
+        /// <param name="i"></param>
+        private void PushSlackNotification(int i)
+        {
+            _objectId = Ref.GetOidFromRef(_createUserStory.Reference);
+            _userStoryUrl = String.Concat(RallyConstant.UserStoryUrlFormat, _objectId);
+            _slackAttachmentString = String.Format("User Story: <{0} | {1} >", _userStoryUrl, _unreadMsgCollection[i].Subject);
+
+            SlackMessage message = new SlackMessage
+            {
+                Channel = RallyConstant.SlackChannel,
+                Text = RallyConstant.SlackNotificationText,
+                Username = RallyConstant.SlackUser
+            };
+
+            var slackAttachment = new SlackAttachment
+            {
+                Fallback = _slackAttachmentString,
+                Text = _slackAttachmentString,
+                Color = RallyConstant.HexColor
+            };
+
+            message.Attachments = new List<SlackAttachment> {slackAttachment};
+            _slackClient.Post(message);
+        }
+
+        /// <summary>
         /// Parses unread email objects, and creates user stories with attachments from the data provided in an email object
         /// </summary>
         /// <param name="workspace"></param>
@@ -265,49 +318,15 @@ namespace Rally
                             _unreadMsgCollection[i].Attachments.StoreToFolder(SyncConstant.AttachmentsDirectory);
                         }
 
-                        #region inLineAttachments
                         if (_unreadMsgCollection[i].EmbeddedObjects.Count > 0)
                         {
-                            foreach (MimePart embeddedImg in _unreadMsgCollection[i].EmbeddedObjects)
-                            {
-                                DownloadInlineAttachments(embeddedImg);
-                                PopulateInlineAttachments();
-                                PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
-                                _attachmentsDictionary.Clear();
-                            }
+                            ProcessInlineAttachments(i);
                         }
-                        #endregion
 
                         PopulateAttachmentsDictionary();
                         PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
                         _attachmentsDictionary.Clear();
-
-                        #region slack
-                        //Slack notificiation for each message
-                        SlackMessage message = new SlackMessage
-                        {
-                            Channel = "#general",
-                            Text = "*Rally Notification*",
-                            Username = "sumanth"
-                        };
-
-                        string objectId = Ref.GetOidFromRef(_createUserStory.Reference);
-                        string typeObject = String.Format("/{0}",objectId);
-                        string urlLink = String.Concat("https://rally1.rallydev.com/#/detail/userstory", typeObject);
-                            
-                        slackAttachmentString = String.Format("User Story: <{0} | {1} >", urlLink, _unreadMsgCollection[i].Subject);
-                        var slackAttachment = new SlackAttachment
-                        {
-                            Fallback = slackAttachmentString,
-                            Text = slackAttachmentString,
-                            Color = "#4ef442",
-                        };
-
-                        //add attachmentList to message
-                        message.Attachments = new List<SlackAttachment> { slackAttachment };
-                        //post to slack server
-                        client.Post(message);
-                        #endregion
+                        PushSlackNotification(i);
                     }
 
                     MarkAsUnread(_unreadMsg, _markAsUnreadFlag, _inbox);
@@ -339,6 +358,5 @@ namespace Rally
                 _imap4Client.Disconnect();
             }
         }
-
     }
 }
