@@ -291,15 +291,9 @@ namespace Rally
                             Username = "sumanth"
                         };
 
-                        //"User Story: <https://rally1.rallydev.com/#/36903994832ud/detail/userstory/96328719420 | User Story Title >",
-                        //_userStoryReference is not initliazed unless there are attachments
-                        string x =
-                            "http://stackoverflow.com/questions/42836822/rally-web-services-api-how-do-i-get-the-url-link-of-the-user-story-getdetailu";
-
-                        var type = Ref.GetTypeFromRef(_createUserStory.Reference);
-                        var objectId = Ref.GetOidFromRef(_createUserStory.Reference);
-                        string typeObject = String.Format("{0}/{1}", type, objectId);
-                        string urlLink = String.Concat("https://rally1.rallydev.com/#/detail/", typeObject);
+                        string objectId = Ref.GetOidFromRef(_createUserStory.Reference);
+                        string typeObject = String.Format("/{0}",objectId);
+                        string urlLink = String.Concat("https://rally1.rallydev.com/#/detail/userstory", typeObject);
                             
                         slackAttachmentString = String.Format("User Story: <{0} | {1} >", urlLink, _unreadMsgCollection[i].Subject);
                         var slackAttachment = new SlackAttachment
