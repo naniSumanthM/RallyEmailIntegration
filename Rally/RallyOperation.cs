@@ -144,9 +144,9 @@ namespace Rally
 
             //fetch data from the story request
             userStoryRequest.Fetch = new List<string>()
-        {
-            RallyConstant.FormattedId, RallyConstant.Name, RallyConstant.Owner
-        };
+            {
+                RallyConstant.FormattedId, RallyConstant.Name, RallyConstant.Owner
+            };
 
             try
             {
@@ -934,15 +934,15 @@ namespace Rally
                     toCreate[RallyConstant.Name] = (unreadMsgCollection[i].Subject);
                     toCreate[RallyConstant.Description] = (unreadMsgCollection[i].BodyText.Text);
                     createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
-              
+
                     foreach (MimePart embedded in unreadMsgCollection[i].EmbeddedObjects)
                     {
                         var fileName = embedded.ContentName;
                         var binary = embedded.BinaryContent;
                         File.WriteAllBytes(SyncConstant.InlineImageDirectory + fileName, binary); //downloads one file from the email
 
-                  //} //the images can all be downloaded once, but if they clash with the fileNames that are attached, they will fail
-                      //mechanism for identifying duplicate file names with unique base64 string
+                        //} //the images can all be downloaded once, but if they clash with the fileNames that are attached, they will fail
+                        //mechanism for identifying duplicate file names with unique base64 string
 
                         //Which is always expected to be a .png extension
                         Console.WriteLine("Downloaded: " + fileName);
@@ -983,7 +983,7 @@ namespace Rally
                             attachmentContainer[RallyConstant.Name] = attachmentPair.Value;
                             attachmentContainer[RallyConstant.Description] = RallyConstant.EmailAttachment;
                             attachmentContainer[RallyConstant.ContentType] = "file/";
-                            
+
                             //Create & associate the attachment
                             attachmentContainerCreateResult = _api.Create(RallyConstant.Attachment, attachmentContainer);
                         }
@@ -992,7 +992,7 @@ namespace Rally
                         attachmentsDictionary.Clear();
                     }
                 }
-                Console.WriteLine("Created "+unread.Length + " User stories with Inline Images");
+                Console.WriteLine("Created " + unread.Length + " User stories with Inline Images");
             }
             else
             {
@@ -1152,4 +1152,3 @@ namespace Rally
     }
 
 }
-

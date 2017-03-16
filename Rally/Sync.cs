@@ -55,7 +55,6 @@ namespace Rally
         private SlackClient client = new SlackClient("https://hooks.slack.com/services/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", 100);
         private string slackAttachmentString;
 
-
         /// <summary>
         /// Authenticate with Outlook with valid credentials.
         /// </summary>
@@ -224,7 +223,6 @@ namespace Rally
             }
         }
 
-
         /// <summary>
         /// Parses unread email objects, and creates user stories with attachments from the data provided in an email object
         /// </summary>
@@ -283,7 +281,7 @@ namespace Rally
                         PopulateAttachmentsDictionary();
                         PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
                         _attachmentsDictionary.Clear();
-                       
+
                         #region slack
                         //Slack notificiation for each message
                         SlackMessage message = new SlackMessage
@@ -293,27 +291,28 @@ namespace Rally
                             Username = "sumanth"
                         };
 
-                        //Text = "US667: <https://rally1.rallydev.com/#/36903994832ud/detail/userstory/96328719420 | User Story Title >",
-                        slackAttachmentString = String.Format("User Story: <{0} | {1} >", _userStoryReference, _unreadMsgCollection[i].Subject);
+                        //"User Story: <https://rally1.rallydev.com/#/36903994832ud/detail/userstory/96328719420 | User Story Title >",
+                        //_userStoryReference is not initliazed unless there are attachments
+                        string x =
+                            "http://stackoverflow.com/questions/42836822/rally-web-services-api-how-do-i-get-the-url-link-of-the-user-story-getdetailu";
+
+                        var type = Ref.GetTypeFromRef(_createUserStory.Reference);
+                        var objectId = Ref.GetOidFromRef(_createUserStory.Reference);
+                        string typeObject = String.Format("{0}/{1}", type, objectId);
+                        string urlLink = String.Concat("https://rally1.rallydev.com/#/detail/", typeObject);
+                            
+                        slackAttachmentString = String.Format("User Story: <{0} | {1} >", urlLink, _unreadMsgCollection[i].Subject);
                         var slackAttachment = new SlackAttachment
                         {
-                            Fallback = "New open task [Urgent]: <http://url_to_task|Test out Slack message attachments>",
+                            Fallback = slackAttachmentString,
                             Text = slackAttachmentString,
                             Color = "#4ef442",
-                            Fields =
-                            new List<SlackField>
-                            {
-                                new SlackField
-                                {
-                                    Value = _unreadMsgCollection[i].BodyText.Text
-                                }
-                            }
                         };
 
                         //add attachmentList to message
                         message.Attachments = new List<SlackAttachment> { slackAttachment };
                         //post to slack server
-                        client.Post(message); 
+                        client.Post(message);
                         #endregion
                     }
 
