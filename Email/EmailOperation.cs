@@ -209,11 +209,9 @@ namespace Email
         /// Unread email objects will be left unread, UNLESS fetched
         /// </summary>
 
-
         public void moveMessages()
         {
             Imap4Client client = new Imap4Client();
-            List<Message> unreadList = new List<Message>();
 
             try
             {
@@ -234,7 +232,6 @@ namespace Email
                     inbox.MoveMessage(id, Constant.ProcessedFolder);
                 }
 
-                var mailsUndeleted = client.SelectMailbox(Constant.InboxFolder);
                 Console.WriteLine("Moved Messages to: " + Constant.ProcessedFolder);
             }
             catch (Imap4Exception)

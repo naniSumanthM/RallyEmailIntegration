@@ -628,6 +628,32 @@
             Binary encoding.
             </summary>
         </member>
+        <member name="T:ActiveUp.Net.Mail.ContentType">
+            <summary>
+            ContentType Header Class.
+            </summary>
+        </member>
+        <member name="P:ActiveUp.Net.Mail.ContentType.MimeType">
+            <summary>
+            Mimetype original or Type + Subtype.
+            </summary>
+        </member>
+        <member name="P:ActiveUp.Net.Mail.ContentType.Type">
+            <summary>
+            The type of content-type
+            </summary>
+        </member>
+        <member name="P:ActiveUp.Net.Mail.ContentType.SubType">
+            <summary>
+            Subtype of content-type received, if invalid, return "plain"
+            </summary>
+        </member>
+        <member name="M:ActiveUp.Net.Mail.ContentType.ToString">
+            <summary>
+            Override of method to explain content type string
+            </summary>
+            <returns></returns>
+        </member>
         <member name="T:ActiveUp.Net.Mail.IFlag">
             <summary>
             Represents a flag.
