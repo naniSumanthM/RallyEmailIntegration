@@ -466,14 +466,6 @@ namespace Email
         }
 
         #endregion
+
     }
 }
-
-
-/*                                                      Design Queries
-                                            Fetching HeaderObject vs MessageObject
-
-Header object when fecthed is quicker, but needs to be marked as read explicitly and then moved to the processed folder
-Message object will be needed in some point, |Even though the library marks it as read| we need to state explicitly to mark it as read 
-*/
-

@@ -205,7 +205,7 @@ namespace Rally
         {
             _inlineFileName = embeddedImg.ContentName;
             _inlineFileBinaryContent = embeddedImg.BinaryContent;
-            File.WriteAllBytes(SyncConstant.InlineImageDirectory + _inlineFileName, _inlineFileBinaryContent);
+            File.WriteAllBytes(string.Concat(SyncConstant.InlineImageDirectory, _inlineFileName), _inlineFileBinaryContent);
         }
 
         ///<summary>

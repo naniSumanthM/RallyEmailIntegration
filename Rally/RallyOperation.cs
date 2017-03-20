@@ -1,4 +1,5 @@
-﻿using ActiveUp.Net.Security.OpenPGP.Packets;
+﻿using System.CodeDom;
+using ActiveUp.Net.Security.OpenPGP.Packets;
 
 namespace Rally
 {
