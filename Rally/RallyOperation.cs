@@ -14,7 +14,6 @@ namespace Rally
     using ActiveUp.Net.Mail;
     using System.Drawing;
     #endregion
-
     class RallyOperation
     {
         RallyRestApi _api;

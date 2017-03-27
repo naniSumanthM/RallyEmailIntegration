@@ -2,10 +2,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-using System.Net.Configuration;
+using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using ActiveUp.Net.Mail;
+using ActiveUp.Net.WhoIs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Rally;
 using Rally.RestApi;
+using Rally.RestApi.Json;
+using Rally.RestApi.Response;
 using Slack.Webhooks;
 
 namespace IntegrationTesting
@@ -81,6 +85,30 @@ namespace IntegrationTesting
         }
 
         /// <summary>
+        /// Verify user is logged out, and NO process continues after we disconnect in FINALLY
+        /// </summary>
+        [TestMethod]
+        public void EnsureImap4IsDisconnected()
+        {
+            Imap4Client client = new Imap4Client();
+
+            client.ConnectSsl("imap-mail.outlook.com", 993);
+            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+
+            Assert.AreEqual(true, client.IsConnected);
+
+            try
+            {
+                client.Disconnect();
+                Assert.AreEqual(false, client.IsConnected);
+            }
+            catch (Imap4Exception)
+            {
+                throw new Imap4Exception();
+            }
+        }
+
+        /// <summary>
         /// Test to verify the Outlook server returns the number of messages for a given inbox 
         /// </summary>
         [TestMethod]
@@ -94,10 +122,55 @@ namespace IntegrationTesting
             client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
 
             Mailbox inbox = client.SelectMailbox("Conversations");
-            int[] unreadMessages = inbox.Search("ALL");
+            int[] messageCount = inbox.Search("ALL");
+            //Assert [total messges = 17]
+            Assert.AreEqual(17, messageCount.Length);
+        }
 
-            //Assert [total messges = 16]
-            Assert.AreEqual(16, unreadMessages.Length);
+        [TestMethod]
+        public void EnsureSyncProcessIsNotStartedWithoutUnreadEmailMessages()
+        {
+            Imap4Client client = new Imap4Client();
+            client.ConnectSsl("imap-mail.outlook.com", 993);
+            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+
+            Mailbox mainMailbox = client.SelectMailbox("Sync");
+            int[] mainUnreadMessages = mainMailbox.Search("UNSEEN");
+            bool startProcess = false;
+
+            if (mainUnreadMessages.Length > 0)
+            {
+                startProcess = true;
+            }
+            else
+            {
+                startProcess = false;
+            }
+
+            Assert.AreEqual(false, startProcess);
+        }
+
+        [TestMethod]
+        public void ActUponUnreadEmailMessages()
+        {
+            Imap4Client client = new Imap4Client();
+            client.ConnectSsl("imap-mail.outlook.com", 993);
+            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+
+            Mailbox mainMailbox = client.SelectMailbox("Sync");
+            int[] mainUnreadMessages = mainMailbox.Search("UNSEEN");
+            bool startProcess = false;
+
+            if (mainUnreadMessages.Length > 0)
+            {
+                startProcess = true;
+            }
+            else
+            {
+                startProcess = false;
+            }
+
+            Assert.AreEqual(true, startProcess);
         }
 
         /// <summary>
@@ -115,7 +188,7 @@ namespace IntegrationTesting
             client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
 
             Mailbox inbox = client.SelectMailbox("Conversations");
-            int[] unreadMessages = inbox.Search("ALL");
+            int[] unreadMessages = inbox.Search("UNSEEN");
             int numberOfUnreadMessages = unreadMessages.Length;
             List<Message> unreadMessageCollection = new List<Message>();
 
@@ -127,7 +200,7 @@ namespace IntegrationTesting
                     unreadMessageCollection.Add(msg);
                 }
             }
-            Assert.AreEqual(16, unreadMessageCollection.Count);
+            Assert.AreEqual(17, unreadMessageCollection.Count);
         }
 
         /// <summary>
@@ -163,12 +236,12 @@ namespace IntegrationTesting
 
         /// <summary>
         /// Test to ensure that messages can be moved from one mailbox to another
-        /// Need to add 37 unread messages to "INBOX" for test to pass
         /// </summary>
         [TestMethod]
-        public void VerifyThatUnreadMessagesCanBeMoved()
+        public void EnsureUnreadMessagesCanBeMoved()
         {
-            var _selectedMailBox = "INBOX";
+            var _selectedMailBox = "MoveA";
+            var _targetMailBox = "MoveB";
 
             using (var client = new Imap4Client())
             {
@@ -176,46 +249,51 @@ namespace IntegrationTesting
                 client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
 
                 var mails = client.SelectMailbox(_selectedMailBox);
-                var mailMessages = mails.Search("ALL");
+                var mailMessages = mails.Search("UNSEEN");
 
-                foreach (var id in mailMessages)
+                for (int i = 0; i < mailMessages.Length; i++)
                 {
-                    mails.MoveMessage(id, "Processed");
+                    mails.MoveMessage(i, _targetMailBox);
                 }
 
-                var mailsUndeleted = client.SelectMailbox(_selectedMailBox);
+                client.SelectMailbox(_selectedMailBox);
                 client.Disconnect();
             }
 
-            Assert.AreEqual(30, 30);
+            Assert.AreEqual(15, 15);
         }
 
         /// <summary>
         /// Test to verify that any message that is marked as read is not moved
+        /// Messages are marked read when they are fetched
         /// </summary>
         [TestMethod]
         public void VerifyThatReadMessagesCannotBeMoved()
         {
-            var _selectedMailBox = "inboxA";
+            Imap4Client client = new Imap4Client();            
+            client.ConnectSsl("imap-mail.outlook.com", 993);
+            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
 
-            using (var client = new Imap4Client())
+            Mailbox targetMailbox = client.SelectMailbox("inboxA");
+            Mailbox destinationMailbox = client.SelectMailbox("inboxB");
+            int[] targetMailInts = targetMailbox.Search("ALL");
+            List<Message> targetList = new List<Message>();
+
+            for (int i = 0; i < targetMailInts.Length; i++)
             {
-                client.ConnectSsl("imap-mail.outlook.com", 993);
-                client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
-
-                var mails = client.SelectMailbox(_selectedMailBox);
-                var mailMessages = mails.Search("SEEN");
-
-                foreach (var id in mailMessages)
-                {
-                    mails.MoveMessage(id, "inboxB");
-                }
-
-                var mailsUndeleted = client.SelectMailbox(_selectedMailBox);
-                client.Disconnect();
+                Message targetMessage = targetMailbox.Fetch.MessageObject(targetMailInts[i]);
+                targetList.Add(targetMessage);
             }
 
-            Assert.AreEqual(0, 0);
+            //Now all the messages are marked as read
+            int[] targetReadMailInts = targetMailbox.Search("UNSEEN");
+
+            for (int i = 0; i < targetReadMailInts.Length; i++)
+            {
+                targetMailbox.MoveMessage(i, "inboxB");
+            }
+
+            Assert.AreEqual(0, destinationMailbox.MessageCount);
         }
 
         /// <summary>
@@ -240,7 +318,10 @@ namespace IntegrationTesting
                 markAsUnreadFlagCollection.Add("SEEN");
                 inbox.RemoveFlags(msg, markAsUnreadFlagCollection);
             }
-            Assert.AreEqual(4, inboxMessages.Length);
+
+            int[] unreadEmailMessages = inbox.Search("UNSEEN");
+
+            Assert.AreEqual(12, unreadEmailMessages.Length);
         }
 
         /// <summary>
@@ -250,11 +331,10 @@ namespace IntegrationTesting
         public void EnsureMessageIsMarkedReadWhenFetched()
         {
             Imap4Client client = new Imap4Client();
-
             client.ConnectSsl("imap-mail.outlook.com", 993);
             client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
 
-            Mailbox inbox = client.SelectMailbox("TestB");
+            Mailbox inbox = client.SelectMailbox("Test");
             int[] allInboxMessages = inbox.Search("ALL");
 
             foreach (var msg in allInboxMessages)
@@ -280,10 +360,9 @@ namespace IntegrationTesting
 
             //File IO
             string directoryPath = "C:\\Users\\suman\\Desktop\\testFolder";
-            string emailFolder = "attachment";
 
-            Mailbox attachmentMailbox = client.SelectMailbox(emailFolder);
-            int[] attachmentMessages = attachmentMailbox.Search("ALL");
+            Mailbox attachmentMailbox = client.SelectMailbox("attachment");
+            int[] attachmentMessages = attachmentMailbox.Search("UNSEEN");
             List<Message> unreadAttachments = new List<Message>();
 
             for(int i=0; i< attachmentMessages.Length; i++)
@@ -311,81 +390,88 @@ namespace IntegrationTesting
         {
             var imap = new Imap4Client();
             string emailFolder = "inlineImageUT";
-            string directoryPath = "C:\\Users\\suman\\Desktop\\testFolder\\";
+            string directoryPath = "C:\\Users\\maddirsh\\Desktop\\testFolder\\";
+            List<Message> inlineAttachmentList = new List<Message>();
 
             //Authentication
             imap.ConnectSsl("imap-mail.outlook.com", 993);
             imap.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
 
             var inbox = imap.SelectMailbox(emailFolder);
-            var unread = inbox.Search("UNSEEN");
+            var unread = inbox.Search("ALL");
 
             for (var i = 0; i < unread.Length; i++)
             {
                 var unreadMessage = inbox.Fetch.MessageObject(unread[i]);
+                inlineAttachmentList.Add(unreadMessage);   
+            }
 
-                foreach (MimePart embedded in unreadMessage.EmbeddedObjects)
+            for (int i = 0; i < inlineAttachmentList.Count; i++)
+            {
+                foreach (MimePart embedded in inlineAttachmentList[i].EmbeddedObjects)
                 {
-                    var filename = embedded.ContentName;
+                    var fileName = embedded.ContentName;
                     var binary = embedded.BinaryContent;
-                    File.WriteAllBytes(string.Concat(directoryPath,filename), binary);
+                    //downloads one file from the email from the MANY inline attachments that can exists
+                    File.WriteAllBytes(string.Concat(directoryPath, fileName), binary);
                 }
             }
+
             Assert.AreEqual(1, Directory.GetFiles(directoryPath).Length);
         }
-
+        
         [TestMethod]
-        public void GivenAnEmailVerifyThatDuplicateAttachmentsAreIgnoredWhenUploadedToRally()
+        public void VerifyDuplicateAttachmentsAreIgnoredWhenInsertedIntoDictionary()
         {
-            //Authenticate
-            Imap4Client client = new Imap4Client();
-            client.ConnectSsl("imap-mail.outlook.com", 993);
-            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+            //IO Variables
+            string storeLocation = "C:\\Users\\maddirsh\\Desktop\\toRally";
+            string[] attachmentLocations = Directory.GetFiles(storeLocation);
+            string _base64EncodedString;
+            string attachmentFileName;
 
-            //File IO
-            string directoryPath = "C:\\Users\\suman\\Desktop\\testFolder";
-            string emailFolder = "inboxB";
-
-            Mailbox attachmentMailbox = client.SelectMailbox(emailFolder);
-            int[] attachmentMessages = attachmentMailbox.Search("ALL");
-            List<Message> messagesList = new List<Message>();
-
-            for (int i = 0; i < attachmentMessages.Length; i++)
+            //Rally Variables
+            Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
+        
+            //convert the files to base64
+            foreach (var file in attachmentLocations)
             {
-                Message m = attachmentMailbox.Fetch.MessageObject(attachmentMessages[i]);
-                messagesList.Add(m);
+                var attachmentBytes = File.ReadAllBytes(file);
+                _base64EncodedString = Convert.ToBase64String(attachmentBytes);
+                attachmentFileName = Path.GetFileName(file);
+                var fileName = string.Empty;
+
+                if (!(attachmentsDictionary.TryGetValue(_base64EncodedString, out fileName)))
+                {
+                    try
+                    {
+                        attachmentsDictionary.Add(_base64EncodedString, attachmentFileName);
+                    }
+                    catch (ArgumentException)
+                    {
+                        Assert.Fail();
+                    }
+                }
             }
 
-            foreach (var msg in messagesList)
-            {
-
-
-
-
-            }
-
-
-
+            Assert.AreEqual(2, attachmentsDictionary.Count);
         }
 
         [TestMethod]
-        public void GivenAnEmailVerifyAllDuplicateInlineAttachmentsAreIgnoredWhenUploadedToRally()
+        public void GivenAnEmailObjectReturnIfSeenOrUnseen()
         {
             
         }
+
+        [TestMethod]
+        public void GivenAnEmailWithBlankSubjectEnsureNoSubjectUserStoryIsCreated()
+        {
+            //authenticate
+            //parse an email without a subject
+            //make the user story
+            //ensure that the subject is labeled "no Subject"
+        }
+        
     }
 }
 
 
-//TODO: 3/20/17 - 3/24/17
-/*
-Test - see if message obj is read or unread
-Test - multiple email attachments inline or attached
-Test - move Message fails
-
-Rally - blank subject lines
-Rally - attachments
-Rally - descriptions
-Rally - features
-Clear all userstories in rally to test workspace, project and the user stories count
-*/

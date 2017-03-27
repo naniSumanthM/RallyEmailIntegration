@@ -1,6 +1,6 @@
 ﻿namespace Rally
 {
-    #region: Libraries
+    #region: System Libraries
     using System;
     using System.IO;
     using RestApi;
@@ -9,14 +9,28 @@
     using System.Collections.Generic;
     using System.Net;
     using ActiveUp.Net.Mail;
-    using Slack.Webhooks;
+    using System.Drawing;
     #endregion
 
-    class Sync
+    class RallyTest
     {
         private RallyRestApi _rallyApi;
         private Imap4Client _imap4Client;
-        private SlackClient _slackClient;
+        public string RallyUserName { get; set; }
+        public string RallyPassword { get; set; }
+        public string OutlookUserName { get; set; }
+        public string OutlookPassword { get; set; }
+
+        public RallyTest(string rallyUserName, string rallyPassword, string outlookUserName, string outlookPassword)
+        {
+            _rallyApi = new RallyRestApi();
+            _imap4Client = new Imap4Client();
+            this.OutlookUserName = outlookUserName;
+            this.OutlookPassword = outlookPassword;
+            this.RallyUserName = rallyUserName;
+            this.RallyPassword = rallyPassword;
+        }
+
         private Mailbox _inbox;
         private int[] _unreadMsg;
         private List<Message> _unreadMsgCollection = new List<Message>();
@@ -35,33 +49,7 @@
         private string[] _attachmentPaths;
         private string[] _inlineAttachmentPaths;
         private byte[] _inlineFileBinaryContent;
-        private string _objectId;
-        private string _userStoryUrl;
-        private string _slackAttachmentString;
 
-        public string RallyUserName { get; set; }
-        public string RallyPassword { get; set; }
-        public string OutlookUserName { get; set; }
-        public string OutlookPassword { get; set; }
-
-        /// <summary>
-        /// Default Constrcutor will authenticate with Rally, Outlook, Slack
-        /// </summary>
-        /// <param name="rallyUserName"></param>
-        /// <param name="rallyPassword"></param>
-        /// <param name="outlookUserName"></param>
-        /// <param name="outlookPassword"></param>
-        public Sync(string rallyUserName, string rallyPassword, string outlookUserName, string outlookPassword)
-        {
-            _rallyApi = new RallyRestApi();
-            _imap4Client = new Imap4Client();
-            _slackClient = new SlackClient(RallyConstant.SlackApiToken, 100);
-            this.OutlookUserName = outlookUserName;
-            this.OutlookPassword = outlookPassword;
-            this.RallyUserName = rallyUserName;
-            this.RallyPassword = rallyPassword;
-        }
-        
         /// <summary>
         /// Authenticate with Outlook with valid credentials.
         /// </summary>
@@ -180,19 +168,6 @@
             {
                 markAsUnreadFlag.Add(OutlookConstant.OutlookSeenMessages);
                 inbox.RemoveFlags(item, markAsUnreadFlag);
-            }
-        }
-
-        /// <summary>
-        /// Email objects need to be moved to the "PROCESSED" folder
-        /// </summary>
-        /// <param name="unread"></param>
-        /// <param name="markAsUnreadFlag"></param>
-        /// <param name="inbox"></param>
-        private static void MoveMessage(int[] unread, FlagCollection markAsUnreadFlag, Mailbox inbox)
-        {
-            foreach (var item in unread)
-            {
                 inbox.MoveMessage(item, OutlookConstant.OutlookProcessedFolder);
             }
         }
@@ -208,92 +183,13 @@
         }
 
         /// <summary>
-        /// Inline attachments are downloaded and written to a directory on home "inlineAttachments"
-        /// </summary>
-        /// <param name="embeddedImg"></param>
-        private void DownloadInlineAttachments(MimePart embeddedImg)
-        {
-            _inlineFileName = embeddedImg.ContentName;
-            _inlineFileBinaryContent = embeddedImg.BinaryContent;
-            File.WriteAllBytes(string.Concat(SyncConstant.InlineImageDirectory, _inlineFileName), _inlineFileBinaryContent);
-        }
-
-        ///<summary>
-        /// Parses each inline image attached in the email and populates the dictionary
-        /// </summary>
-        private void PopulateInlineAttachments()
-        {
-            _inlineAttachmentPaths = Directory.GetFiles(SyncConstant.InlineImageDirectory);
-
-            foreach (var file in _inlineAttachmentPaths)
-            {
-                //convert to base 64
-                string base64String = FileToBase64(file);
-                string attachmentFileName = Path.GetFileName(file);
-                var emptyFileString = string.Empty;
-
-                Console.WriteLine("Adding to Dictionary: " + attachmentFileName);
-
-                if (!(_attachmentsDictionary.TryGetValue(base64String, out _inlineFileName)))
-                {
-                    _attachmentsDictionary.Add(base64String, attachmentFileName);
-                }
-
-                File.Delete(file);
-            }
-        }
-
-        /// <summary>
-        /// Processes Each Inline Image attached within an email
-        /// </summary>
-        /// <param name="i"></param>
-        private void ProcessInlineAttachments(int i)
-        {
-            foreach (MimePart embeddedImg in _unreadMsgCollection[i].EmbeddedObjects)
-            {
-                DownloadInlineAttachments(embeddedImg);
-                PopulateInlineAttachments();
-                PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
-                _attachmentsDictionary.Clear();
-            }
-        }
-
-        /// <summary>
-        /// Pushes a notification into Slack for each user story created
-        /// </summary>
-        /// <param name="i"></param>
-        private void PushSlackNotification(int i)
-        {
-            _objectId = Ref.GetOidFromRef(_createUserStory.Reference);
-            _userStoryUrl = String.Concat(RallyConstant.UserStoryUrlFormat, _objectId);
-            _slackAttachmentString = String.Format("User Story: <{0} | {1} >", _userStoryUrl, _unreadMsgCollection[i].Subject);
-
-            SlackMessage message = new SlackMessage
-            {
-                Channel = RallyConstant.SlackChannel,
-                Text = RallyConstant.SlackNotificationText,
-                Username = RallyConstant.SlackUser
-            };
-
-            var slackAttachment = new SlackAttachment
-            {
-                Fallback = _slackAttachmentString,
-                Text = _slackAttachmentString,
-                Color = RallyConstant.HexColor
-            };
-
-            message.Attachments = new List<SlackAttachment> {slackAttachment};
-            _slackClient.Post(message);
-        }
-
-        /// <summary>
         /// Parses unread email objects, and creates user stories with attachments from the data provided in an email object
         /// </summary>
         /// <param name="workspace"></param>
         /// <param name="project"></param>
         public void SyncUserStories(string workspace, string project)
         {
-            _unreadMsgCollection.Capacity = 50;
+            _unreadMsgCollection.Capacity = 25;
             _toCreate[RallyConstant.WorkSpace] = workspace;
             _toCreate[RallyConstant.Project] = project;
 
@@ -328,20 +224,25 @@
                             _unreadMsgCollection[i].Attachments.StoreToFolder(SyncConstant.AttachmentsDirectory);
                         }
 
+                        #region inLineImage
                         if (_unreadMsgCollection[i].EmbeddedObjects.Count > 0)
                         {
-                            ProcessInlineAttachments(i);
+                            foreach (MimePart embeddedImg in _unreadMsgCollection[i].EmbeddedObjects)
+                            {
+                                DownloadInlineAttachments(embeddedImg);
+                                PopulateInlineAttachments();
+                                PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
+                                _attachmentsDictionary.Clear();
+                            }
                         }
+                        #endregion
 
                         PopulateAttachmentsDictionary();
                         PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
                         _attachmentsDictionary.Clear();
-                        PushSlackNotification(i);
                     }
 
                     MarkAsUnread(_unreadMsg, _markAsUnreadFlag, _inbox);
-                    //Bug: Test Fails, and the method is not consistent
-                    //MoveMessage(_unreadMsg, _markAsUnreadFlag, _inbox);
                     Console.WriteLine("Created " + _unreadMsg.Length + " User Stories");
                 }
                 else
@@ -365,6 +266,45 @@
             {
                 Console.WriteLine(e.Message);
             }
+            finally
+            {
+                _imap4Client.Disconnect();
+            }
         }
+
+        private void PopulateInlineAttachments()
+        {
+            _inlineAttachmentPaths = Directory.GetFiles(SyncConstant.InlineImageDirectory);
+
+            foreach (var file in _inlineAttachmentPaths)
+            {
+                //convert to base 64
+                string base64String = FileToBase64(file);
+                string attachmentFileName = Path.GetFileName(file);
+                var emptyFileString = string.Empty;
+
+                Console.WriteLine("Adding to Dictionary: " + attachmentFileName);
+
+                if (!(_attachmentsDictionary.TryGetValue(base64String, out _inlineFileName)))
+                {
+                    _attachmentsDictionary.Add(base64String, attachmentFileName);
+                }
+
+                File.Delete(file);
+            }
+        }
+
+        private void DownloadInlineAttachments(MimePart embeddedImg)
+        {
+            _inlineFileName = embeddedImg.ContentName;
+            _inlineFileBinaryContent = embeddedImg.BinaryContent;
+            File.WriteAllBytes(SyncConstant.InlineImageDirectory + _inlineFileName, _inlineFileBinaryContent);
+        }
+
+        public string helloQ()
+        {
+            return "Hello Q";
+        }
+
     }
 }

@@ -259,7 +259,7 @@ namespace Email
         {
             Imap4Client imap = new Imap4Client();
             List<Message> unreadList = new List<Message>();
-
+            unreadList.Capacity = 45;
             try
             {
                 //Connect and Authenticate
@@ -283,11 +283,11 @@ namespace Email
                     }
 
                     //print out the unread subejct line
-                    foreach (var item in unreadList)
-                    {
-                        Console.WriteLine(item.Subject);
-                        //Console.WriteLine(item.BodyText.Text);
-                    }
+                    //foreach (var item in unreadList)
+                    //{
+                    //    Console.WriteLine(item.Subject);
+                    //    //Console.WriteLine(item.BodyText.Text);
+                    //}
 
                     //Move messages to the processed folder
                     foreach (var item in unread)
@@ -303,13 +303,13 @@ namespace Email
                 }
 
             }
-            catch (Imap4Exception)
+            catch (Imap4Exception imap4)
             {
-                throw new Imap4Exception();
+                Console.WriteLine(imap4.Message);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                throw new Exception();
+                throw new Exception(e.Message);
             }
             finally
             {
@@ -381,8 +381,8 @@ namespace Email
                 imap.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
                 imap.Login(Constant.OutlookUserName, Constant.OutlookPassword);
 
-                Mailbox inbox = imap.SelectMailbox("inbox");
-                int[] unread = inbox.Search("unseen");
+                Mailbox inbox = imap.SelectMailbox("attachment");
+                int[] unread = inbox.Search("UNSEEN");
                 Console.WriteLine("Unread Messgaes: " + unread.Length);
 
                 Console.WriteLine("Start");
@@ -395,15 +395,11 @@ namespace Email
                         unreadAttachments.Add(unreadMessage);
                     }
 
-                    //download the attachments and store it in a folder
-                    //cannot attempt to download an attachment for messages that do not contain any attachments.
-                    //need a universal path or some server to store or not just store but copy and paste the attachments
                     foreach (var attachemntMsg in unreadAttachments)
                     {
                         if (attachemntMsg.Attachments.Count > 0)
                         {
-                            attachemntMsg.Attachments.StoreToFolder("C:\\Users\\maddirsh\\Desktop\\IntegrationService\\Email\\attachments");
-                            //move the mssageObj into processed folder
+                            attachemntMsg.Attachments.StoreToFolder("C:\\Users\\maddirsh\\Desktop\\testFolder");
                         }
                         else
                         {
@@ -416,13 +412,17 @@ namespace Email
                     Console.WriteLine("No Unread Messages");
                 }
             }
+            catch (IOException i)
+            {
+                Console.WriteLine(i.Message);
+            }
             catch (Imap4Exception ie)
             {
-                Console.WriteLine(string.Format("Imap4 Exception: {0}", ie.Message));
+                Console.WriteLine(ie.Message);
             }
             catch (Exception e)
             {
-                Console.WriteLine(string.Format("Unexpected Exception: {0}"), e.Message);
+                Console.WriteLine(e.Message);
             }
             finally
             {
@@ -466,6 +466,17 @@ namespace Email
         }
 
         #endregion
+
+        public void CheckMailboxToString()
+        {
+            Imap4Client client = new Imap4Client();
+            client.ConnectSsl("imap-mail.outlook.com", 993);
+            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+
+            Mailbox targetMailbox = client.SelectMailbox("inboxA");
+
+            Console.WriteLine("jhugd");
+        }
 
     }
 }
