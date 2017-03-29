@@ -67,8 +67,8 @@
         /// </summary>
         private void LoginToOutlook()
         {
-            _imap4Client.ConnectSsl(OutlookConstant.OutlookHost, OutlookConstant.OutlookPort);
-            _imap4Client.Login(this.OutlookUserName, this.OutlookPassword);
+            _imap4Client.ConnectSsl("imap.gmail.com", 993);
+            _imap4Client.Login("sumanth083@gmail.com", "iYmcmb24$");
         }
 
         /// <summary>
@@ -302,7 +302,8 @@
                 LoginToOutlook();
                 LoginToRally();
 
-                _inbox = _imap4Client.SelectMailbox(OutlookConstant.OutlookInboxFolder);
+                //Change back to outlook
+                _inbox = _imap4Client.SelectMailbox("Tickets");
                 _unreadMsg = _inbox.Search(OutlookConstant.OutlookUnseenMessages);
                 _markAsUnreadFlag = new FlagCollection();
 
@@ -340,8 +341,7 @@
                     }
 
                     MarkAsUnread(_unreadMsg, _markAsUnreadFlag, _inbox);
-                    //Bug: Test Fails, and the method is not consistent
-                    //MoveMessage(_unreadMsg, _markAsUnreadFlag, _inbox);
+                    //TODO: Network Error when moving messages
                     Console.WriteLine("Created " + _unreadMsg.Length + " User Stories");
                 }
                 else

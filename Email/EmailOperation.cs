@@ -2,6 +2,10 @@
 using ActiveUp.Net.Mail;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
+using MailKit;
+using MailKit.Net.Imap;
+using MailKit.Security;
 
 namespace Email
 {
@@ -220,33 +224,34 @@ namespace Email
                 client.Login(Constant.OutlookUserName, Constant.OutlookPassword);
 
                 //client.CreateMailbox("Created");
-                Mailbox inbox = client.SelectMailbox(Constant.InboxFolder);
+                Mailbox inbox = client.SelectMailbox("MoveA");
                 Console.WriteLine(inbox.MessageCount);
 
                 //Array of ALL email objects in selected mailbox
-                int[] ids = inbox.Search("ALL");
+                int[] inboxMessagesIndex = inbox.Search("ALL");
 
                 //iterate and move each message to a different folder
-                foreach (var id in ids)
+                foreach (var messageOrdinal in inboxMessagesIndex)
                 {
-                    inbox.MoveMessage(id, Constant.ProcessedFolder);
+                    inbox.MoveMessage(messageOrdinal, "MoveB");
                 }
 
                 Console.WriteLine("Moved Messages to: " + Constant.ProcessedFolder);
             }
-            catch (Imap4Exception)
+            catch (Imap4Exception i)
             {
-                throw new Imap4Exception();
+                Console.WriteLine("Imap4Exception Response" + i.Response + Environment.NewLine + "Imap4 Message" + i.Message);
+                Console.WriteLine("Imap 4 target "+i.TargetSite);
+                Console.WriteLine("Imap 4 source"+i.Source);
             }
-            catch (Exception)
+            catch (WebException w )
             {
-                throw new Exception();
+                Console.WriteLine("Web exception response "+w.Response + Environment.NewLine +"Web exception message"+ w.Message);
             }
-            finally
+            catch (Exception e)
             {
-                client.Disconnect();
+                Console.WriteLine(e.Message);
             }
-
         }
         #endregion
 
@@ -258,44 +263,25 @@ namespace Email
         public void moveUnreadEmail()
         {
             Imap4Client imap = new Imap4Client();
-            List<Message> unreadList = new List<Message>();
-            unreadList.Capacity = 45;
+
             try
             {
-                //Connect and Authenticate
-                imap.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
-                imap.Login(Constant.OutlookUserName, Constant.OutlookPassword);
+                //Authenticate
+                imap.ConnectSsl("imap.gmail.com", 993);
+                imap.Login("sumanth083@gmail.com","iYmcmb24$");
 
-                //setup Enviornment
-                Mailbox inbox = imap.SelectMailbox(Constant.InboxFolder);
+                
+                //configure google enviornment
+                Mailbox inbox = imap.SelectMailbox("Tickets");
                 int[] unread = inbox.Search("UNSEEN");
                 Console.WriteLine("Unread Messages: " + unread.Length);
 
-                //Crawl through the inbox and parse unread subject lines, then move those email objects to a folder
                 if (unread.Length > 0)
                 {
-                    //Add the unread emails to a collection
-                    for (int i = 0; i < unread.Length; i++)
-                    {
-                        Message msg = inbox.Fetch.MessageObject(unread[i]);
-                        //explicitly mark as read for each email obejct?? - but the action of fetching does that for us
-                        unreadList.Add(msg);
-                    }
-
-                    //print out the unread subejct line
-                    //foreach (var item in unreadList)
-                    //{
-                    //    Console.WriteLine(item.Subject);
-                    //    //Console.WriteLine(item.BodyText.Text);
-                    //}
-
-                    //Move messages to the processed folder
                     foreach (var item in unread)
                     {
-                        inbox.MoveMessage(item, Constant.ProcessedFolder);
+                        inbox.MoveMessage(item, "Processed");
                     }
-                    //line could cause an error
-                    //Mailbox movedFrom = imap.SelectMailbox(Credential.inboxFolder);
                 }
                 else
                 {
@@ -314,7 +300,6 @@ namespace Email
             finally
             {
                 imap.Disconnect();
-                unreadList.Clear();
             }
         }
         #endregion
@@ -378,10 +363,10 @@ namespace Email
             try
             {
                 //Authenticate
-                imap.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
-                imap.Login(Constant.OutlookUserName, Constant.OutlookPassword);
+                imap.ConnectSsl("imap.gmail.com", 993);
+                imap.Login("sumanth083@gmail.com", "iYmcmb24$");
 
-                Mailbox inbox = imap.SelectMailbox("attachment");
+                Mailbox inbox = imap.SelectMailbox("Tickets");
                 int[] unread = inbox.Search("UNSEEN");
                 Console.WriteLine("Unread Messgaes: " + unread.Length);
 
@@ -399,7 +384,7 @@ namespace Email
                     {
                         if (attachemntMsg.Attachments.Count > 0)
                         {
-                            attachemntMsg.Attachments.StoreToFolder("C:\\Users\\maddirsh\\Desktop\\testFolder");
+                            attachemntMsg.Attachments.StoreToFolder("C:\\Users\\maddirsh\\Desktop\\AllAttachments\\regularAttachments\\");
                         }
                         else
                         {
@@ -467,16 +452,20 @@ namespace Email
 
         #endregion
 
-        public void CheckMailboxToString()
+        public void testMimeKit()
         {
-            Imap4Client client = new Imap4Client();
-            client.ConnectSsl("imap-mail.outlook.com", 993);
-            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+            using (var client = new ImapClient())
+            {
+                client.Connect("imap-mail.outlook.com", 993, SecureSocketOptions.SslOnConnect);
+                client.Authenticate("x@outlook.com", "x");
+                Console.WriteLine(client.IsConnected);
+                Console.WriteLine(client.Inbox.Count);
 
-            Mailbox targetMailbox = client.SelectMailbox("inboxA");
 
-            Console.WriteLine("jhugd");
+                //IMailFolder folder = client.GetFolder("Processed");
+                //Console.WriteLine(folder.Unread);
+                client.Disconnect(true);
+            }
         }
-
     }
 }
