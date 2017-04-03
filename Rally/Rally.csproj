@@ -108,14 +108,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Demo.cs" />
-    <Compile Include="OutlookConstant.cs" />
+    <Compile Include="EmailConstant.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RallyQueryConstant.cs" />
     <Compile Include="RallyConstant.cs" />
     <Compile Include="RallyOperation.cs" />
-    <Compile Include="RallyTest.cs" />
-    <Compile Include="Sync.cs" />
-    <Compile Include="SyncConstant.cs" />
+    <Compile Include="RallyIntegration.cs" />
+    <Compile Include="StorageConstant.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -6,7 +6,7 @@ namespace Rally
     {
         static void Main(string[] args)
         {
-            RallyIntegration rallyRallyIntegration = new RallyIntegration(RallyConstant.UserName, RallyConstant.Password, "sumanth083@gmail.com", "iYmcmb24$");
+            RallyIntegration rallyRallyIntegration = new RallyIntegration(RallyConstant.UserName, RallyConstant.Password, EmailConstant.GoogleUsername, EmailConstant.GenericPassword);
             rallyRallyIntegration.SyncUserStories(RallyQueryConstant.WorkspaceZScratch, RallyQueryConstant.ScrumTeamSampleProject);
 
             Console.ReadLine();
