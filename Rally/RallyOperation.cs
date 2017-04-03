@@ -16,8 +16,8 @@ namespace Rally
     #endregion
     class RallyOperation
     {
-        RallyRestApi _api;
-        Imap4Client imap;
+        RallyRestApi _rallyRestApi;
+        Imap4Client _imap;
         public const string ServerName = RallyConstant.ServerId;
 
         //properties
@@ -25,10 +25,9 @@ namespace Rally
 
         public string Password { get; set; }
 
-        //constructor
         public RallyOperation(string userName, string password)
         {
-            _api = new RallyRestApi();
+            _rallyRestApi = new RallyRestApi();
             this.UserName = userName;
             this.Password = password;
             this.EnsureRallyIsAuthenticated();
@@ -36,17 +35,17 @@ namespace Rally
 
         private void EnsureRallyIsAuthenticated()
         {
-            if (this._api.AuthenticationState != RallyRestApi.AuthenticationResult.Authenticated)
+            if (this._rallyRestApi.AuthenticationState != RallyRestApi.AuthenticationResult.Authenticated)
             {
-                _api.Authenticate(this.UserName, this.Password, ServerName, null, RallyConstant.AllowSso);
+                _rallyRestApi.Authenticate(this.UserName, this.Password, ServerName, null, RallyConstant.AllowSso);
             }
         }
 
         public void EnsureOutlookIsAuthenticated()
         {
-            imap = new Imap4Client();
-            imap.ConnectSsl(OutlookConstant.OutlookHost, OutlookConstant.OutlookPort);
-            imap.Login(OutlookConstant.OutlookUsername, OutlookConstant.OutlookPassword);
+            _imap = new Imap4Client();
+            _imap.ConnectSsl(EmailConstant.OutlookHost, EmailConstant.ImapPort);
+            _imap.Login(EmailConstant.OutlookUsername, EmailConstant.GenericPassword);
         }
 
         #region: Query Workspaces
@@ -60,13 +59,13 @@ namespace Rally
             this.EnsureRallyIsAuthenticated();
 
             //instantiate a DynamicJsonObject obj
-            DynamicJsonObject djo = _api.GetSubscription(RallyQueryConstant.Workspaces);
+            DynamicJsonObject djo = _rallyRestApi.GetSubscription(RallyQueryConstant.Workspaces);
             Request workspaceRequest = new Request(djo[RallyQueryConstant.Workspaces]);
 
             try
             {
                 //query for the workspaces
-                QueryResult returnWorkspaces = _api.Query(workspaceRequest);
+                QueryResult returnWorkspaces = _rallyRestApi.Query(workspaceRequest);
 
                 //iterate through the list and return the list of workspaces
                 foreach (var value in returnWorkspaces.Results)
@@ -92,12 +91,12 @@ namespace Rally
             this.EnsureRallyIsAuthenticated();
 
             //DynamicJSonObject instantion
-            DynamicJsonObject dObj = _api.GetSubscription(RallyQueryConstant.Workspaces);
+            DynamicJsonObject dObj = _rallyRestApi.GetSubscription(RallyQueryConstant.Workspaces);
 
             try
             {
                 Request workspaceRequest = new Request(dObj[RallyQueryConstant.Workspaces]);
-                QueryResult workSpaceQuery = _api.Query(workspaceRequest);
+                QueryResult workSpaceQuery = _rallyRestApi.Query(workspaceRequest);
 
                 foreach (var workspace in workSpaceQuery.Results)
                 {
@@ -105,7 +104,7 @@ namespace Rally
                     projectRequest.Fetch = new List<String>() { RallyConstant.Name };
 
                     //Query for the projects
-                    QueryResult projectQuery = _api.Query(projectRequest);
+                    QueryResult projectQuery = _rallyRestApi.Query(projectRequest);
                     foreach (var project in projectQuery.Results)
                     {
                         Console.WriteLine(project[RallyConstant.Name]);
@@ -152,7 +151,7 @@ namespace Rally
             {
                 //query the items in the list
                 userStoryRequest.Query = new Query(RallyQueryConstant.LastUpdatDate, Query.Operator.GreaterThan, RallyQueryConstant.DateGreaterThan);
-                QueryResult userStoryResult = _api.Query(userStoryRequest);
+                QueryResult userStoryResult = _rallyRestApi.Query(userStoryRequest);
 
                 //iterate through the userStory Collection
                 foreach (var userStory in userStoryResult.Results)
@@ -203,7 +202,7 @@ namespace Rally
             try
             {
                 //query for the items in the list
-                QueryResult userStoryResult = _api.Query(userStoryRequest);
+                QueryResult userStoryResult = _rallyRestApi.Query(userStoryRequest);
 
                 //iterate through the query results
                 foreach (var userStory in userStoryResult.Results)
@@ -218,7 +217,7 @@ namespace Rally
 
                     //Task Request
                     Request taskRequest = new Request(userStory[RallyConstant.TasksUpperCase]);
-                    QueryResult taskResult = _api.Query(taskRequest);
+                    QueryResult taskResult = _rallyRestApi.Query(taskRequest);
                     if (taskResult.TotalResultCount > 0)
                     {
                         foreach (var task in taskResult.Results)
@@ -272,7 +271,7 @@ namespace Rally
                 };
 
                 iterationRequest.Query = new Query(RallyConstant.Project, Query.Operator.Equals, RallyQueryConstant.ScrumTeamSampleProject);
-                QueryResult queryResult = _api.Query(iterationRequest);
+                QueryResult queryResult = _rallyRestApi.Query(iterationRequest);
                 foreach (var iteration in queryResult.Results)
                 {
                     Console.WriteLine(iteration[RallyConstant.Name]);
@@ -315,7 +314,7 @@ namespace Rally
 
             try
             {
-                CreateResult createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
+                CreateResult createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
                 Console.WriteLine("Created Userstory: " + createUserStory.Reference);
             }
             catch (WebException e)
@@ -352,7 +351,7 @@ namespace Rally
             try
             {
                 Console.WriteLine("<<Creating TA>>");
-                CreateResult createTask = _api.Create(RallyConstant.TasksLowerCase, toCreate);
+                CreateResult createTask = _rallyRestApi.Create(RallyConstant.TasksLowerCase, toCreate);
                 Console.WriteLine("<<Created TA>>");
             }
             catch (WebException)
@@ -386,12 +385,12 @@ namespace Rally
             {
                 //Authenticate with Imap
                 Imap4Client imap = new Imap4Client();
-                imap.ConnectSsl(OutlookConstant.OutlookHost, OutlookConstant.OutlookPort);
-                imap.Login(OutlookConstant.OutlookUsername, OutlookConstant.OutlookPassword);
+                imap.ConnectSsl(EmailConstant.OutlookHost, EmailConstant.ImapPort);
+                imap.Login(EmailConstant.OutlookUsername, EmailConstant.GenericPassword);
 
                 //setup Imap enviornment
-                Mailbox inbox = imap.SelectMailbox(OutlookConstant.OutlookInboxFolder);
-                int[] unread = inbox.Search(OutlookConstant.OutlookUnseenMessages);
+                Mailbox inbox = imap.SelectMailbox(EmailConstant.InboxFolder);
+                int[] unread = inbox.Search(EmailConstant.UnseenMessages);
                 Console.WriteLine("Unread Messages: " + unread.Length);
 
                 if (unread.Length > 0)
@@ -408,14 +407,14 @@ namespace Rally
                     {
                         toCreate[RallyConstant.Name] = (unreadMessageList[i].Subject);
                         toCreate[RallyConstant.Description] = (unreadMessageList[i].BodyText.Text);
-                        CreateResult cr = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
+                        CreateResult cr = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
                     }
 
                     //Move Fetched Messages into the processed folder
                     //Maybe mark them as unread, if a developer wants to still examine an email for further clarity
                     foreach (var item in unread)
                     {
-                        inbox.MoveMessage(item, OutlookConstant.OutlookProcessedFolder);
+                        inbox.MoveMessage(item, EmailConstant.ProcessedFolder);
                     }
                 }
                 else
@@ -455,12 +454,12 @@ namespace Rally
             {
                 //Authenticate with Imap
                 Imap4Client imap = new Imap4Client();
-                imap.ConnectSsl(OutlookConstant.OutlookHost, OutlookConstant.OutlookPort);
-                imap.Login(OutlookConstant.OutlookUsername, OutlookConstant.OutlookPassword);
+                imap.ConnectSsl(EmailConstant.OutlookHost, EmailConstant.ImapPort);
+                imap.Login(EmailConstant.OutlookUsername, EmailConstant.GenericPassword);
 
                 //setup Imap enviornment
-                Mailbox inbox = imap.SelectMailbox(OutlookConstant.OutlookInboxFolder);
-                int[] unread = inbox.Search(OutlookConstant.OutlookUnseenMessages);
+                Mailbox inbox = imap.SelectMailbox(EmailConstant.InboxFolder);
+                int[] unread = inbox.Search(EmailConstant.UnseenMessages);
                 Console.WriteLine("Unread Messages: " + unread.Length);
                 FlagCollection markAsUnreadFlag = new FlagCollection();
 
@@ -478,7 +477,7 @@ namespace Rally
                     {
                         toCreate[RallyConstant.Name] = (unreadMessageList[i].Subject);
                         toCreate[RallyConstant.Description] = (unreadMessageList[i].BodyText.Text);
-                        CreateResult cr = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
+                        CreateResult cr = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
                     }
 
                     //Move Fetched Messages - Here We are blindly just moving all the messages in the unseen array, assuming they are processed
@@ -486,7 +485,7 @@ namespace Rally
                     {
                         markAsUnreadFlag.Add("Seen");
                         inbox.RemoveFlags(item, markAsUnreadFlag); //removing the seen flag on the email object
-                        inbox.MoveMessage(item, OutlookConstant.OutlookProcessedFolder);
+                        inbox.MoveMessage(item, EmailConstant.ProcessedFolder);
                     }
                     //TODO: Safer to write another loop and iterate over the procesed folder, but that will crawl
                     //the entire inbox and mark the already read items as unread.
@@ -544,7 +543,7 @@ namespace Rally
 
             try
             {
-                CreateResult myAttachmentContentCreateResult = _api.Create("AttachmentContent", myAttachmentContent);
+                CreateResult myAttachmentContentCreateResult = _rallyRestApi.Create("AttachmentContent", myAttachmentContent);
                 String myAttachmentContentRef = myAttachmentContentCreateResult.Reference;
                 Console.WriteLine("Created: " + myAttachmentContentRef);
 
@@ -557,7 +556,7 @@ namespace Rally
                 myAttachment["ContentType"] = "image/png";
                 myAttachment["Size"] = imageNumberBytes;
 
-                CreateResult myAttachmentCreateResult = _api.Create("Attachment", myAttachment);
+                CreateResult myAttachmentCreateResult = _rallyRestApi.Create("Attachment", myAttachment);
             }
             catch (Exception e)
             {
@@ -603,10 +602,10 @@ namespace Rally
             try
             {
                 //create user story
-                CreateResult createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
+                CreateResult createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
 
                 //create attachment
-                CreateResult myAttachmentContentCreateResult = _api.Create(RallyConstant.AttachmentContent, myAttachmentContent);
+                CreateResult myAttachmentContentCreateResult = _rallyRestApi.Create(RallyConstant.AttachmentContent, myAttachmentContent);
                 String myAttachmentContentRef = myAttachmentContentCreateResult.Reference;
 
                 // DynamicJSONObject for Attachment Container
@@ -619,7 +618,7 @@ namespace Rally
                 myAttachment[RallyConstant.Size] = imageNumberBytes;
 
                 //create & associate the attachment
-                CreateResult myAttachmentCreateResult = _api.Create(RallyConstant.Attachment, myAttachment);
+                CreateResult myAttachmentCreateResult = _rallyRestApi.Create(RallyConstant.Attachment, myAttachment);
                 Console.WriteLine("Created User Story: " + createUserStory.Reference);
             }
             catch (WebException e)
@@ -666,7 +665,7 @@ namespace Rally
             toCreate[RallyConstant.WorkSpace] = workspace;
             toCreate[RallyConstant.Project] = project;
             toCreate[RallyConstant.Name] = userstoryName;
-            createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
+            createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
 
             //iterate over each filePath and a) convert to base 64, b) get the fileName.extension, c)Add to the dictionary object
             foreach (string attachment in attachmentPaths)
@@ -686,7 +685,7 @@ namespace Rally
                 {
                     //create attachment content
                     attachmentContent[RallyConstant.Content] = attachmentPair.Key;
-                    attachmentContentCreateResult = _api.Create(RallyConstant.AttachmentContent, attachmentContent);
+                    attachmentContentCreateResult = _rallyRestApi.Create(RallyConstant.AttachmentContent, attachmentContent);
                     attachmentContentReference = attachmentContentCreateResult.Reference;
 
                     //create attachment contianer
@@ -698,7 +697,7 @@ namespace Rally
                     //attachmentContainer[RallyField.size] = Omitted
 
                     //Create & associate the attachment
-                    attachmentContainerCreateResult = _api.Create(RallyConstant.Attachment, attachmentContainer);
+                    attachmentContainerCreateResult = _rallyRestApi.Create(RallyConstant.Attachment, attachmentContainer);
                     Console.WriteLine("Created User Story: " + createUserStory.Reference);
                 }
                 catch (WebException e)
@@ -747,7 +746,7 @@ namespace Rally
             toCreate[RallyConstant.WorkSpace] = workspace;
             toCreate[RallyConstant.Project] = project;
             toCreate[RallyConstant.Name] = userstoryName;
-            createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
+            createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
 
             //iterate over each filePath and a) convert to base 64, b) get the fileName.extension, c)Add to the dictionary object
             foreach (string attachment in attachmentPaths)
@@ -777,7 +776,7 @@ namespace Rally
                 {
                     //create attachment content
                     attachmentContent[RallyConstant.Content] = attachmentPair.Value;
-                    attachmentContentCreateResult = _api.Create(RallyConstant.AttachmentContent, attachmentContent);
+                    attachmentContentCreateResult = _rallyRestApi.Create(RallyConstant.AttachmentContent, attachmentContent);
                     attachmentContentReference = attachmentContentCreateResult.Reference;
 
                     //create attachment contianer
@@ -788,7 +787,7 @@ namespace Rally
                     attachmentContainer[RallyConstant.ContentType] = "file/";
 
                     //Create & associate the attachment
-                    attachmentContainerCreateResult = _api.Create(RallyConstant.Attachment, attachmentContainer);
+                    attachmentContainerCreateResult = _rallyRestApi.Create(RallyConstant.Attachment, attachmentContainer);
                     Console.WriteLine("Created User Story: " + createUserStory.Reference);
                 }
                 catch (WebException e)
@@ -835,7 +834,7 @@ namespace Rally
             toCreate[RallyConstant.WorkSpace] = workspace;
             toCreate[RallyConstant.Project] = project;
             toCreate[RallyConstant.Name] = userstoryName;
-            createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
+            createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
 
             foreach (string attachment in attachmentPaths)
             {
@@ -864,7 +863,7 @@ namespace Rally
                 {
                     //create attachment content
                     attachmentContent[RallyConstant.Content] = attachmentPair.Key;
-                    attachmentContentCreateResult = _api.Create(RallyConstant.AttachmentContent, attachmentContent);
+                    attachmentContentCreateResult = _rallyRestApi.Create(RallyConstant.AttachmentContent, attachmentContent);
                     attachmentContentReference = attachmentContentCreateResult.Reference;
 
                     //create attachment contianer
@@ -875,7 +874,7 @@ namespace Rally
                     attachmentContainer[RallyConstant.ContentType] = "file/";
 
                     //Create & associate the attachment
-                    attachmentContainerCreateResult = _api.Create(RallyConstant.Attachment, attachmentContainer);
+                    attachmentContainerCreateResult = _rallyRestApi.Create(RallyConstant.Attachment, attachmentContainer);
                     attachmentCount++;
                 }
                 catch (WebException e)
@@ -889,7 +888,7 @@ namespace Rally
 
         #endregion
 
-        #region embeddedImages
+        #region :embeddedImages
         /// <summary>
         /// Method to pull images that could have been copied & pasted, instead of attaching
         /// </summary>
@@ -916,8 +915,8 @@ namespace Rally
             this.EnsureOutlookIsAuthenticated();
             this.EnsureRallyIsAuthenticated();
 
-            var inbox = imap.SelectMailbox(OutlookConstant.OutlookInboxFolder);
-            var unread = inbox.Search(OutlookConstant.OutlookUnseenMessages);
+            var inbox = _imap.SelectMailbox(EmailConstant.InboxFolder);
+            var unread = inbox.Search(EmailConstant.UnseenMessages);
             Console.WriteLine("Unread Messages: " + unread.Length);
 
             if (unread.Length > 0)
@@ -933,13 +932,13 @@ namespace Rally
                 {
                     toCreate[RallyConstant.Name] = (unreadMsgCollection[i].Subject);
                     toCreate[RallyConstant.Description] = (unreadMsgCollection[i].BodyText.Text);
-                    createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
+                    createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
 
                     foreach (MimePart embedded in unreadMsgCollection[i].EmbeddedObjects)
                     {
                         var fileName = embedded.ContentName;
                         var binary = embedded.BinaryContent;
-                        File.WriteAllBytes(SyncConstant.InlineImageDirectory + fileName, binary); //downloads one file from the email
+                        File.WriteAllBytes(StorageConstant.InlineImageDirectory + fileName, binary); //downloads one file from the email
 
                         //} //the images can all be downloaded once, but if they clash with the fileNames that are attached, they will fail
                         //mechanism for identifying duplicate file names with unique base64 string
@@ -948,7 +947,7 @@ namespace Rally
                         Console.WriteLine("Downloaded: " + fileName);
 
                         //only 1 file from the email is downloaded here at once, so we continue this proecedure for the number of emails there are in the mailbox
-                        inlineAttachmentsPath = Directory.GetFiles(SyncConstant.InlineImageDirectory);
+                        inlineAttachmentsPath = Directory.GetFiles(StorageConstant.InlineImageDirectory);
 
                         foreach (var file in inlineAttachmentsPath)
                         {
@@ -974,7 +973,7 @@ namespace Rally
                         {
                             //create attachment content
                             attachmentContent[RallyConstant.Content] = attachmentPair.Key;
-                            attachmentContentCreateResult = _api.Create(RallyConstant.AttachmentContent, attachmentContent);
+                            attachmentContentCreateResult = _rallyRestApi.Create(RallyConstant.AttachmentContent, attachmentContent);
                             userStoryReference = attachmentContentCreateResult.Reference;
 
                             //create attachment contianer
@@ -985,7 +984,7 @@ namespace Rally
                             attachmentContainer[RallyConstant.ContentType] = "file/";
 
                             //Create & associate the attachment
-                            attachmentContainerCreateResult = _api.Create(RallyConstant.Attachment, attachmentContainer);
+                            attachmentContainerCreateResult = _rallyRestApi.Create(RallyConstant.Attachment, attachmentContainer);
                         }
                         //clear the dictionary for each parse mime part object, not for each email
                         //unlike the other example where ALL the images are parsed from a given email object in one go for one iteration
@@ -1032,8 +1031,8 @@ namespace Rally
                 EnsureOutlookIsAuthenticated();
 
                 //Setup Imap enviornment
-                Mailbox inbox = imap.SelectMailbox(OutlookConstant.OutlookInboxFolder);
-                int[] unread = inbox.Search(OutlookConstant.OutlookUnseenMessages);
+                Mailbox inbox = _imap.SelectMailbox(EmailConstant.InboxFolder);
+                int[] unread = inbox.Search(EmailConstant.UnseenMessages);
                 FlagCollection markAsUnreadFlag = new FlagCollection();
 
                 if (unread.Length > 0)
@@ -1052,21 +1051,21 @@ namespace Rally
                         //stage the user story
                         if (unreadMsgCollection[i].Subject.Equals(""))
                         {
-                            unreadMsgCollection[i].Subject = OutlookConstant.NoSubject;
+                            unreadMsgCollection[i].Subject = EmailConstant.NoSubject;
                         }
                         toCreate[RallyConstant.Name] = (unreadMsgCollection[i].Subject);
                         toCreate[RallyConstant.Description] = (unreadMsgCollection[i].BodyText.Text);
-                        createUserStory = _api.Create(RallyConstant.HierarchicalRequirement, toCreate);
+                        createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
 
                         //check to see if message has attachments & then store them
                         if (unreadMsgCollection[i].Attachments.Count > 0)
                         {
                             //Do all the attachments from the email object get stored here?? _No it has to complete one iteration
-                            unreadMsgCollection[i].Attachments.StoreToFolder(SyncConstant.AttachmentsDirectory);
+                            unreadMsgCollection[i].Attachments.StoreToFolder(StorageConstant.AttachmentsDirectory);
                         }
 
                         //reference the path where the attachments live for the [ith] message
-                        attachmentPaths = Directory.GetFiles(SyncConstant.AttachmentsDirectory);
+                        attachmentPaths = Directory.GetFiles(StorageConstant.AttachmentsDirectory);
 
                         //Convert each attachment to base64, populate the map, and move the file
                         foreach (var file in attachmentPaths)
@@ -1093,7 +1092,7 @@ namespace Rally
                             {
                                 //create attachment content
                                 attachmentContent[RallyConstant.Content] = attachmentPair.Key;
-                                attachmentContentCreateResult = _api.Create(RallyConstant.AttachmentContent, attachmentContent);
+                                attachmentContentCreateResult = _rallyRestApi.Create(RallyConstant.AttachmentContent, attachmentContent);
                                 userStoryReference = attachmentContentCreateResult.Reference;
 
                                 //create attachment contianer
@@ -1104,7 +1103,7 @@ namespace Rally
                                 attachmentContainer[RallyConstant.ContentType] = "file/";
 
                                 //Create & associate the attachment
-                                attachmentContainerCreateResult = _api.Create(RallyConstant.Attachment, attachmentContainer);
+                                attachmentContainerCreateResult = _rallyRestApi.Create(RallyConstant.Attachment, attachmentContainer);
                             }
                             catch (WebException e)
                             {
@@ -1117,9 +1116,9 @@ namespace Rally
                     //Move Fetched Messages to Processed Folder, and mark them as unread()
                     foreach (var item in unread)
                     {
-                        markAsUnreadFlag.Add(OutlookConstant.OutlookSeenMessages);
+                        markAsUnreadFlag.Add(EmailConstant.SeenMessages);
                         inbox.RemoveFlags(item, markAsUnreadFlag);
-                        inbox.MoveMessage(item, OutlookConstant.OutlookProcessedFolder);
+                        inbox.MoveMessage(item, EmailConstant.ProcessedFolder);
                     }
 
                     Console.WriteLine("Created " + unread.Length + " User Stories");
@@ -1143,7 +1142,7 @@ namespace Rally
             }
             finally
             {
-                imap.Disconnect();
+                _imap.Disconnect();
             }
 
         }

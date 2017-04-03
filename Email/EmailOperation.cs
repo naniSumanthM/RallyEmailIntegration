@@ -12,11 +12,11 @@ namespace Email
     class EmailOperation
     {
         #region getAllEmail()
+
         /// <summary>
         /// Returns the subject along with the body of an email.
         /// Does not take into account read and unread email messages.
         /// </summary>
-
         public void getAllEmail()
         {
             Imap4Client imap = new Imap4Client();
@@ -24,8 +24,8 @@ namespace Email
             try
             {
                 //Authenticate with the Outlook Server
-                imap.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
-                imap.Login(Constant.OutlookUserName, Constant.OutlookPassword);
+                imap.ConnectSsl(Constant.OutlookImapHost, Constant.ImapPort);
+                imap.Login(Constant.OutlookUserName, Constant.GenericPassword);
 
                 //Select a mailbox folder
                 Mailbox inbox = imap.SelectMailbox("inbox");
@@ -54,13 +54,14 @@ namespace Email
                 imap.Disconnect();
             }
         }
+
         #endregion
 
         #region fetchUnreadEmails()
+
         /// <summary>
         /// Fetches all the unread emails and prints their subject along with their body
         /// </summary>
-
         public void FetchUnreadEmails()
         {
             Imap4Client client = new Imap4Client();
@@ -69,12 +70,13 @@ namespace Email
             try
             {
                 //Authenticate 
-                client.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
-                client.Login(Constant.OutlookUserName, Constant.OutlookPassword);
+                client.ConnectSsl(Constant.OutlookImapHost, Constant.ImapPort);
+                client.Login(Constant.OutlookUserName, Constant.GenericPassword);
 
                 //Stage the enviornment
                 Mailbox inbox = client.SelectMailbox("INBOX");
-                int[] unread = inbox.Search("UNSEEN"); //returns an int of the number of unread email objects, given an inbox
+                int[] unread = inbox.Search("UNSEEN");
+                    //returns an int of the number of unread email objects, given an inbox
                 Console.WriteLine("Unread Messages: " + unread.Length);
 
                 if (unread.Length > 0)
@@ -95,7 +97,6 @@ namespace Email
                 {
                     Console.WriteLine("No Unread Messages found");
                 }
-
             }
             catch (Imap4Exception)
             {
@@ -111,15 +112,16 @@ namespace Email
                 unreadList.Clear();
             }
         }
+
         #endregion
 
         #region fetchUnreadSubjectLines()
+
         /// <summary>
         /// Method that (FETCHES unread EMAIL OBJECT) and stores it into a list. 
         /// The list is iterated to parse only the subject line, but it can be used to get the body as well.
         /// iSSUE: fetch entire email object and mark as read or fetch only the Header obj and mark as read manually??
         /// </summary>
-
         public void fetchUnreadSubjectLines()
         {
             //Authenticate with the Outlook Server
@@ -128,8 +130,8 @@ namespace Email
 
             try
             {
-                imap.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
-                imap.Login(Constant.OutlookUserName, Constant.OutlookPassword);
+                imap.ConnectSsl(Constant.OutlookImapHost, Constant.ImapPort);
+                imap.Login(Constant.OutlookUserName, Constant.GenericPassword);
 
                 //setup Enviornment
                 Mailbox inbox = imap.SelectMailbox("INBOX");
@@ -155,7 +157,6 @@ namespace Email
                 {
                     Console.WriteLine("No unread messages found");
                 }
-
             }
             catch (Imap4Exception)
             {
@@ -175,10 +176,10 @@ namespace Email
         #endregion
 
         #region CreateMailbox()
+
         /// <summary>
         /// Create a new folder within the outlook email server
         /// </summary>
-
         public void createMailBox()
         {
             Imap4Client client = new Imap4Client();
@@ -186,7 +187,7 @@ namespace Email
             {
                 //Connect and Authenticate
                 client.ConnectSsl(Constant.OutlookImapHost, 993);
-                client.Login(Constant.OutlookUserName, Constant.OutlookPassword);
+                client.Login(Constant.OutlookUserName, Constant.GenericPassword);
 
                 //create mailbox
                 client.CreateMailbox("Mailbox-A");
@@ -205,14 +206,15 @@ namespace Email
                 client.Disconnect();
             }
         }
+
         #endregion
 
         #region moveMessages()
+
         /// <summary>
         /// Move email objects from one folder to another. 
         /// Unread email objects will be left unread, UNLESS fetched
         /// </summary>
-
         public void moveMessages()
         {
             Imap4Client client = new Imap4Client();
@@ -220,46 +222,45 @@ namespace Email
             try
             {
                 //Authenticate 
-                client.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
-                client.Login(Constant.OutlookUserName, Constant.OutlookPassword);
+                client.ConnectSsl("imap.gmail.com", 993);
+                client.Login("rallyintegration@gmail.com", "iYmcmb24");
 
-                //client.CreateMailbox("Created");
-                Mailbox inbox = client.SelectMailbox("MoveA");
+                Mailbox inbox = client.SelectMailbox("Inbox");
                 Console.WriteLine(inbox.MessageCount);
+                int[] messageCount = inbox.Search("ALL");
 
-                //Array of ALL email objects in selected mailbox
-                int[] inboxMessagesIndex = inbox.Search("ALL");
-
-                //iterate and move each message to a different folder
-                foreach (var messageOrdinal in inboxMessagesIndex)
+                for (int i = 0; i < messageCount.Length; i++)
                 {
-                    inbox.MoveMessage(messageOrdinal, "MoveB");
+                    inbox.MoveMessage(i, "Starred");
                 }
 
                 Console.WriteLine("Moved Messages to: " + Constant.ProcessedFolder);
             }
             catch (Imap4Exception i)
             {
-                Console.WriteLine("Imap4Exception Response" + i.Response + Environment.NewLine + "Imap4 Message" + i.Message);
-                Console.WriteLine("Imap 4 target "+i.TargetSite);
-                Console.WriteLine("Imap 4 source"+i.Source);
+                Console.WriteLine("Imap4Exception Response" + i.Response + Environment.NewLine + "Imap4 Message" +
+                                  i.Message);
+                Console.WriteLine("Imap 4 target " + i.TargetSite);
+                Console.WriteLine("Imap 4 source" + i.Source);
             }
-            catch (WebException w )
+            catch (WebException w)
             {
-                Console.WriteLine("Web exception response "+w.Response + Environment.NewLine +"Web exception message"+ w.Message);
+                Console.WriteLine("Web exception response " + w.Response + Environment.NewLine + "Web exception message" +
+                                  w.Message);
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
             }
         }
+
         #endregion
 
         #region moveUnreadEmail()
+
         /// <summary>
         /// Method will move all the unread emails to a folder called "Processed"
         /// </summary>
-
         public void moveUnreadEmail()
         {
             Imap4Client imap = new Imap4Client();
@@ -267,12 +268,12 @@ namespace Email
             try
             {
                 //Authenticate
-                imap.ConnectSsl("imap.gmail.com", 993);
-                imap.Login("sumanth083@gmail.com","iYmcmb24$");
+                imap.ConnectSsl(Constant.OutlookImapHost, 993);
+                imap.Login(Constant.OutlookUserName, Constant.GenericPassword);
 
-                
+
                 //configure google enviornment
-                Mailbox inbox = imap.SelectMailbox("Tickets");
+                Mailbox inbox = imap.SelectMailbox("INBOX");
                 int[] unread = inbox.Search("UNSEEN");
                 Console.WriteLine("Unread Messages: " + unread.Length);
 
@@ -287,7 +288,6 @@ namespace Email
                 {
                     Console.WriteLine("No Unread Email");
                 }
-
             }
             catch (Imap4Exception imap4)
             {
@@ -302,6 +302,7 @@ namespace Email
                 imap.Disconnect();
             }
         }
+
         #endregion
 
         #region markMessageObjAsUnread()
@@ -310,7 +311,6 @@ namespace Email
         /// Method marks all READ mail as UNREAD MAIL.
         /// Method fetched the messageObject which automatically marks a message as read
         /// </summary>
-
         public void markMsgObjAsUnread()
         {
             Imap4Client client = new Imap4Client();
@@ -319,8 +319,8 @@ namespace Email
             try
             {
                 //Authenticate
-                client.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
-                client.Login(Constant.OutlookUserName, Constant.OutlookPassword);
+                client.ConnectSsl(Constant.OutlookImapHost, Constant.ImapPort);
+                client.Login(Constant.OutlookUserName, Constant.GenericPassword);
 
                 //stage the enviornment
                 Mailbox inbox = client.SelectMailbox("inbox");
@@ -333,7 +333,8 @@ namespace Email
                 {
                     Message msg = inbox.Fetch.MessageObject(id);
                     markAsUnreadFlag.Add("SEEN"); //adding all the read email objects to the flag collection
-                    inbox.RemoveFlags(id, markAsUnreadFlag); //then removing the flags, making each mail object as unread
+                    inbox.RemoveFlags(id, markAsUnreadFlag);
+                        //then removing the flags, making each mail object as unread
                 }
             }
             catch (Imap4Exception ie)
@@ -349,9 +350,11 @@ namespace Email
                 client.Disconnect();
             }
         }
+
         #endregion
 
         #region dowloadAttachments()
+
         /// <summary>
         /// Download all the attchments from an undread email message and store them into a folder
         /// </summary>
@@ -363,10 +366,10 @@ namespace Email
             try
             {
                 //Authenticate
-                imap.ConnectSsl("imap.gmail.com", 993);
-                imap.Login("sumanth083@gmail.com", "iYmcmb24$");
+                imap.ConnectSsl(Constant.GoogleImapHost, Constant.ImapPort);
+                imap.Login(Constant.GoogleUserName, Constant.GenericPassword);
 
-                Mailbox inbox = imap.SelectMailbox("Tickets");
+                Mailbox inbox = imap.SelectMailbox("Inbox");
                 int[] unread = inbox.Search("UNSEEN");
                 Console.WriteLine("Unread Messgaes: " + unread.Length);
 
@@ -384,7 +387,7 @@ namespace Email
                     {
                         if (attachemntMsg.Attachments.Count > 0)
                         {
-                            attachemntMsg.Attachments.StoreToFolder("C:\\Users\\maddirsh\\Desktop\\AllAttachments\\regularAttachments\\");
+                            attachemntMsg.Attachments.StoreToFolder(Constant.RegularAttachmentsDirectory);
                         }
                         else
                         {
@@ -416,9 +419,11 @@ namespace Email
             }
             Console.WriteLine("End");
         }
+
         #endregion
 
         #region embeddedImages()
+
         /// <summary>
         /// Method to pull images that could have been copied & pasted, instead of attaching
         /// </summary>
@@ -426,46 +431,53 @@ namespace Email
         {
             var imap = new Imap4Client();
 
-            //Authentication
-            imap.ConnectSsl(Constant.OutlookImapHost, Constant.OutlookImapPort);
-            imap.Login(Constant.OutlookUserName, Constant.OutlookPassword);
+            //Authenticate
+            imap.ConnectSsl(Constant.GoogleImapHost, Constant.ImapPort);
+            imap.Login(Constant.GoogleUserName, Constant.GenericPassword);
 
-            var inbox = imap.SelectMailbox("inbox");
+            var inbox = imap.SelectMailbox("Inbox");
             var unread = inbox.Search("unseen");
+
             Console.WriteLine("Unread Messgaes: " + unread.Length);
 
             if (unread.Length > 0)
-                for (var i = 0; i < unread.Length; i++)
+                for (int i = 0; i < unread.Length; i++)
                 {
                     var unreadMessage = inbox.Fetch.MessageObject(unread[i]);
+                    
                     foreach (MimePart embedded in unreadMessage.EmbeddedObjects)
                     {
                         var filename = embedded.ContentName;
                         var binary = embedded.BinaryContent;
-                        File.WriteAllBytes(Constant.AttachmentPath + filename, binary);
+                        File.WriteAllBytes(String.Concat(Constant.InlineAttachmentsDirectory, filename), binary);
                         Console.WriteLine("Downloaded: " + filename);
                     }
                 }
             else
+            {
                 Console.WriteLine("Unread Messages Not Found");
+            }
         }
 
         #endregion
 
-        public void testMimeKit()
+        #region MimeKit()
+
+        /// <summary>
+        /// Authenticate with Mime Kit
+        /// </summary>
+        public void AuthenticateWithMimeKit()
         {
             using (var client = new ImapClient())
             {
-                client.Connect("imap-mail.outlook.com", 993, SecureSocketOptions.SslOnConnect);
-                client.Authenticate("x@outlook.com", "x");
+                client.Connect("imap.gmail.com", Constant.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.Authenticate("rallyintegration@gmail.com", "iYmcmb24");
                 Console.WriteLine(client.IsConnected);
-                Console.WriteLine(client.Inbox.Count);
 
-
-                //IMailFolder folder = client.GetFolder("Processed");
-                //Console.WriteLine(folder.Unread);
                 client.Disconnect(true);
             }
         }
+
+        #endregion
     }
 }

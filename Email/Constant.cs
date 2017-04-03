@@ -7,13 +7,16 @@
         /// </summary>
 
         public const string OutlookImapHost = "imap-mail.outlook.com";
-        public const int OutlookImapPort = 993;
+        public const string GoogleImapHost = "imap.gmail.com";
+        public const int ImapPort = 993;
+        public const string GoogleUserName = "rallyintegration@gmail.com";
         public const string OutlookUserName = "sumanthmaddirala@outlook.com";
-        public const string OutlookPassword = "iYmcmb24";
+        public const string GenericPassword = "iYmcmb24";
         public const string ProcessedFolder = "PROCESSED";
         public const string InboxFolder = "INBOX";
         public const string UnseenMessages = "UNSEEN";
         public const string All = "ALL";
-        public const string AttachmentPath = "C:\\Users\\maddirsh\\Desktop\\";
+        public const string RegularAttachmentsDirectory = "C:\\Users\\maddirsh\\Desktop\\AllAttachments\\regularAttachments\\";
+        public const string InlineAttachmentsDirectory = "C:\\Users\\maddirsh\\Desktop\\AllAttachments\\inlineAttachments\\";
     }
 }

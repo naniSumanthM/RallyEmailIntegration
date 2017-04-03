@@ -25,7 +25,7 @@ namespace IntegrationTesting
         {
             //Arrange
             RallyRestApi api = new RallyRestApi();
-            
+
             //Act
             if (api.AuthenticationState != RallyRestApi.AuthenticationResult.Authenticated)
             {
@@ -59,7 +59,8 @@ namespace IntegrationTesting
         {
             bool isSlackAuthenticated = false;
 
-            SlackClient client = new SlackClient("https://hooks.slack.com/services/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", 100);
+            SlackClient client =
+                new SlackClient("https://hooks.slack.com/services/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", 100);
             isSlackAuthenticated = true;
 
             SlackMessage message = new SlackMessage
@@ -74,7 +75,7 @@ namespace IntegrationTesting
                 Text = "Slack Unit Test",
             };
 
-            message.Attachments = new List<SlackAttachment> { slackAttachment };
+            message.Attachments = new List<SlackAttachment> {slackAttachment};
 
             if (isSlackAuthenticated == true)
             {
@@ -270,7 +271,7 @@ namespace IntegrationTesting
         [TestMethod]
         public void VerifyThatReadMessagesCannotBeMoved()
         {
-            Imap4Client client = new Imap4Client();            
+            Imap4Client client = new Imap4Client();
             client.ConnectSsl("imap-mail.outlook.com", 993);
             client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
 
@@ -304,7 +305,7 @@ namespace IntegrationTesting
         public void EnsureMessagesCanBeMarkedAsUnread()
         {
             Imap4Client client = new Imap4Client();
-            
+
             client.ConnectSsl("imap-mail.outlook.com", 993);
             client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
 
@@ -343,7 +344,7 @@ namespace IntegrationTesting
             }
 
             int[] unreadIboxMessage = inbox.Search("UNSEEN");
-            Assert.AreEqual(0, unreadIboxMessage.Length);    
+            Assert.AreEqual(0, unreadIboxMessage.Length);
         }
 
         /// <summary>
@@ -365,7 +366,7 @@ namespace IntegrationTesting
             int[] attachmentMessages = attachmentMailbox.Search("UNSEEN");
             List<Message> unreadAttachments = new List<Message>();
 
-            for(int i=0; i< attachmentMessages.Length; i++)
+            for (int i = 0; i < attachmentMessages.Length; i++)
             {
                 Message unreadMessage = attachmentMailbox.Fetch.MessageObject(attachmentMessages[i]);
                 unreadAttachments.Add(unreadMessage);
@@ -381,7 +382,7 @@ namespace IntegrationTesting
 
             Assert.AreEqual(2, Directory.GetFiles(directoryPath).Length);
         }
-        
+
         /// <summary>
         /// Test to Verify all the inline images are dowloaded
         /// </summary>
@@ -403,7 +404,7 @@ namespace IntegrationTesting
             for (var i = 0; i < unread.Length; i++)
             {
                 var unreadMessage = inbox.Fetch.MessageObject(unread[i]);
-                inlineAttachmentList.Add(unreadMessage);   
+                inlineAttachmentList.Add(unreadMessage);
             }
 
             for (int i = 0; i < inlineAttachmentList.Count; i++)
@@ -419,7 +420,7 @@ namespace IntegrationTesting
 
             Assert.AreEqual(1, Directory.GetFiles(directoryPath).Length);
         }
-        
+
         [TestMethod]
         public void VerifyDuplicateAttachmentsAreIgnoredWhenInsertedIntoDictionary()
         {
@@ -431,7 +432,7 @@ namespace IntegrationTesting
 
             //Rally Variables
             Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
-        
+
             //convert the files to base64
             foreach (var file in attachmentLocations)
             {
@@ -459,7 +460,6 @@ namespace IntegrationTesting
         [TestMethod]
         public void GivenAnEmailObjectReturnIfSeenOrUnseen()
         {
-            
         }
 
         [TestMethod]
@@ -470,7 +470,6 @@ namespace IntegrationTesting
             //make the user story
             //ensure that the subject is labeled "no Subject"
         }
-        
     }
 }
 

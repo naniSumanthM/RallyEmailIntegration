@@ -1,6 +1,7 @@
 ﻿namespace Rally
 {
     #region: Libraries
+
     using System;
     using System.IO;
     using RestApi;
@@ -10,6 +11,7 @@
     using System.Net;
     using ActiveUp.Net.Mail;
     using Slack.Webhooks;
+
     #endregion
 
     class Sync
@@ -41,34 +43,34 @@
 
         public string RallyUserName { get; set; }
         public string RallyPassword { get; set; }
-        public string OutlookUserName { get; set; }
-        public string OutlookPassword { get; set; }
+        public string GmailUserName { get; set; }
+        public string GmailPassword { get; set; }
 
         /// <summary>
         /// Default Constrcutor will authenticate with Rally, Outlook, Slack
         /// </summary>
         /// <param name="rallyUserName"></param>
         /// <param name="rallyPassword"></param>
-        /// <param name="outlookUserName"></param>
-        /// <param name="outlookPassword"></param>
-        public Sync(string rallyUserName, string rallyPassword, string outlookUserName, string outlookPassword)
+        /// <param name="gmailUserName"></param>
+        /// <param name="gmailPassword"></param>
+        public Sync(string rallyUserName, string rallyPassword, string gmailUserName, string gmailPassword)
         {
             _rallyApi = new RallyRestApi();
             _imap4Client = new Imap4Client();
             _slackClient = new SlackClient(RallyConstant.SlackApiToken, 100);
-            this.OutlookUserName = outlookUserName;
-            this.OutlookPassword = outlookPassword;
+            this.GmailUserName = gmailUserName;
+            this.GmailPassword = gmailPassword;
             this.RallyUserName = rallyUserName;
             this.RallyPassword = rallyPassword;
         }
-        
+
         /// <summary>
-        /// Authenticate with Outlook with valid credentials.
+        /// Authenticate with Google Mail
         /// </summary>
-        private void LoginToOutlook()
+        private void LoginToGmail()
         {
-            _imap4Client.ConnectSsl("imap.gmail.com", 993);
-            _imap4Client.Login("sumanth083@gmail.com", "iYmcmb24$");
+            _imap4Client.ConnectSsl(EmailConstant.GoogleHost, EmailConstant.ImapPort);
+            _imap4Client.Login(EmailConstant.GoogleUsername, EmailConstant.GenericPassword);
         }
 
         /// <summary>
@@ -78,7 +80,8 @@
         {
             if (this._rallyApi.AuthenticationState != RallyRestApi.AuthenticationResult.Authenticated)
             {
-                _rallyApi.Authenticate(this.RallyUserName, this.RallyPassword, RallyConstant.ServerId, null, RallyConstant.AllowSso);
+                _rallyApi.Authenticate(this.RallyUserName, this.RallyPassword, RallyConstant.ServerId, null,
+                    RallyConstant.AllowSso);
             }
         }
 
@@ -115,7 +118,7 @@
         /// </summary>
         private void PopulateAttachmentsDictionary()
         {
-            _attachmentPaths = Directory.GetFiles(SyncConstant.AttachmentsDirectory);
+            _attachmentPaths = Directory.GetFiles(StorageConstant.AttachmentsDirectory);
 
             foreach (var file in _attachmentPaths)
             {
@@ -140,7 +143,8 @@
         /// <param name="attachmentContent"></param>
         /// <param name="attachmentContainer"></param>
         /// <param name="createUserStory"></param>
-        private void PushAttachments(Dictionary<string, string> attachmentsDictionary, DynamicJsonObject attachmentContent, DynamicJsonObject attachmentContainer, CreateResult createUserStory)
+        private void UploadAttachmentsToRally(Dictionary<string, string> attachmentsDictionary,
+            DynamicJsonObject attachmentContent, DynamicJsonObject attachmentContainer, CreateResult createUserStory)
         {
             foreach (KeyValuePair<string, string> attachmentPair in attachmentsDictionary)
             {
@@ -156,7 +160,7 @@
                     attachmentContainer[RallyConstant.Content] = _userStoryReference;
                     attachmentContainer[RallyConstant.Name] = attachmentPair.Value;
                     attachmentContainer[RallyConstant.Description] = RallyConstant.EmailAttachment;
-                    attachmentContainer[RallyConstant.ContentType] = SyncConstant.FileType;
+                    attachmentContainer[RallyConstant.ContentType] = StorageConstant.FileType;
 
                     //Create & associate the attachment to the respecitve user story
                     _attachmentContainerCreateResult = _rallyApi.Create(RallyConstant.Attachment, attachmentContainer);
@@ -178,7 +182,7 @@
         {
             foreach (var item in unread)
             {
-                markAsUnreadFlag.Add(OutlookConstant.OutlookSeenMessages);
+                markAsUnreadFlag.Add(EmailConstant.SeenMessages);
                 inbox.RemoveFlags(item, markAsUnreadFlag);
             }
         }
@@ -193,7 +197,7 @@
         {
             foreach (var item in unread)
             {
-                inbox.MoveMessage(item, OutlookConstant.OutlookProcessedFolder);
+                inbox.MoveMessage(item, EmailConstant.ProcessedFolder);
             }
         }
 
@@ -215,7 +219,8 @@
         {
             _inlineFileName = embeddedImg.ContentName;
             _inlineFileBinaryContent = embeddedImg.BinaryContent;
-            File.WriteAllBytes(string.Concat(SyncConstant.InlineImageDirectory, _inlineFileName), _inlineFileBinaryContent);
+            File.WriteAllBytes(string.Concat(StorageConstant.InlineImageDirectory, _inlineFileName),
+                _inlineFileBinaryContent);
         }
 
         ///<summary>
@@ -223,11 +228,11 @@
         /// </summary>
         private void PopulateInlineAttachments()
         {
-            _inlineAttachmentPaths = Directory.GetFiles(SyncConstant.InlineImageDirectory);
+            _inlineAttachmentPaths = Directory.GetFiles(StorageConstant.InlineImageDirectory);
 
             foreach (var file in _inlineAttachmentPaths)
             {
-                //convert to base 64
+                //convert to base64 String
                 string base64String = FileToBase64(file);
                 string attachmentFileName = Path.GetFileName(file);
                 var emptyFileString = string.Empty;
@@ -253,7 +258,7 @@
             {
                 DownloadInlineAttachments(embeddedImg);
                 PopulateInlineAttachments();
-                PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
+                UploadAttachmentsToRally(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
                 _attachmentsDictionary.Clear();
             }
         }
@@ -266,7 +271,8 @@
         {
             _objectId = Ref.GetOidFromRef(_createUserStory.Reference);
             _userStoryUrl = String.Concat(RallyConstant.UserStoryUrlFormat, _objectId);
-            _slackAttachmentString = String.Format("User Story: <{0} | {1} >", _userStoryUrl, _unreadMsgCollection[i].Subject);
+            _slackAttachmentString = String.Format("User Story: <{0} | {1} >", _userStoryUrl,
+                _unreadMsgCollection[i].Subject);
 
             SlackMessage message = new SlackMessage
             {
@@ -299,12 +305,11 @@
 
             try
             {
-                LoginToOutlook();
+                LoginToGmail();
                 LoginToRally();
 
-                //Change back to outlook
-                _inbox = _imap4Client.SelectMailbox("Tickets");
-                _unreadMsg = _inbox.Search(OutlookConstant.OutlookUnseenMessages);
+                _inbox = _imap4Client.SelectMailbox(EmailConstant.InboxFolder);
+                _unreadMsg = _inbox.Search(EmailConstant.UnseenMessages);
                 _markAsUnreadFlag = new FlagCollection();
 
                 if (UnreadMessageLength(_unreadMsg) > 0)
@@ -316,7 +321,7 @@
                     {
                         if (string.IsNullOrWhiteSpace(_unreadMsgCollection[i].Subject))
                         {
-                            _unreadMsgCollection[i].Subject = OutlookConstant.NoSubject;
+                            _unreadMsgCollection[i].Subject = EmailConstant.NoSubject;
                         }
 
                         _toCreate[RallyConstant.Name] = (_unreadMsgCollection[i].Subject);
@@ -326,7 +331,7 @@
 
                         if (_unreadMsgCollection[i].Attachments.Count > 0)
                         {
-                            _unreadMsgCollection[i].Attachments.StoreToFolder(SyncConstant.AttachmentsDirectory);
+                            _unreadMsgCollection[i].Attachments.StoreToFolder(StorageConstant.AttachmentsDirectory);
                         }
 
                         if (_unreadMsgCollection[i].EmbeddedObjects.Count > 0)
@@ -335,18 +340,20 @@
                         }
 
                         PopulateAttachmentsDictionary();
-                        PushAttachments(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
+                        UploadAttachmentsToRally(_attachmentsDictionary, _attachmentContent, _attachmentContainer, _createUserStory);
                         _attachmentsDictionary.Clear();
                         PushSlackNotification(i);
                     }
 
                     MarkAsUnread(_unreadMsg, _markAsUnreadFlag, _inbox);
                     //TODO: Network Error when moving messages
+
+
                     Console.WriteLine("Created " + _unreadMsg.Length + " User Stories");
                 }
                 else
                 {
-                    Console.WriteLine("Inbox does not contain unread messages");
+                    Console.WriteLine("No Unread Messages Found");
                 }
             }
             catch (Imap4Exception imap)
