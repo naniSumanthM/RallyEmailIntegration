@@ -20,7 +20,6 @@ namespace Rally
         Imap4Client _imap;
         public const string ServerName = RallyConstant.ServerId;
 
-        //properties
         public string UserName { get; set; }
 
         public string Password { get; set; }
@@ -364,7 +363,7 @@ namespace Rally
 
         #endregion
 
-        #region: Sync User Stories through unread email
+        #region: RallyIntegration User Stories through unread email
         //testing a list of userstories
         public void SyncUserStories(string usWorkspace, string usProject)
         {
@@ -1000,7 +999,7 @@ namespace Rally
         }
         #endregion
 
-        #region: Sync Rally 
+        #region: SyncRallyUserStories
         public void Sync(String workspace, string project)
         {
             //Email variables

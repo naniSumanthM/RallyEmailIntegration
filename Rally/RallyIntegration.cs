@@ -14,15 +14,15 @@
 
     #endregion
 
-    class Sync
+    class RallyIntegration
     {
         private RallyRestApi _rallyApi;
         private Imap4Client _imap4Client;
         private SlackClient _slackClient;
         private Mailbox _inbox;
         private int[] _unreadMsg;
-        private List<Message> _unreadMsgCollection = new List<Message>();
         private FlagCollection _markAsUnreadFlag;
+        private List<Message> _unreadMsgCollection = new List<Message>();
         private Dictionary<string, string> _attachmentsDictionary = new Dictionary<string, string>();
         private DynamicJsonObject _toCreate = new DynamicJsonObject();
         private DynamicJsonObject _attachmentContent = new DynamicJsonObject();
@@ -53,7 +53,7 @@
         /// <param name="rallyPassword"></param>
         /// <param name="gmailUserName"></param>
         /// <param name="gmailPassword"></param>
-        public Sync(string rallyUserName, string rallyPassword, string gmailUserName, string gmailPassword)
+        public RallyIntegration(string rallyUserName, string rallyPassword, string gmailUserName, string gmailPassword)
         {
             _rallyApi = new RallyRestApi();
             _imap4Client = new Imap4Client();
@@ -293,7 +293,7 @@
         }
 
         /// <summary>
-        /// Parses unread email objects, and creates user stories with attachments from the data provided in an email object
+        /// Creates user stories with RallyFeature, Attachments, Description by parsing unread email objects.
         /// </summary>
         /// <param name="workspace"></param>
         /// <param name="project"></param>
@@ -345,9 +345,9 @@
                         PushSlackNotification(i);
                     }
 
+                    //package deal - either move and mark as unread or skip 349 350
                     MarkAsUnread(_unreadMsg, _markAsUnreadFlag, _inbox);
-                    //TODO: Network Error when moving messages
-
+                    MoveMessage(_unreadMsg, _markAsUnreadFlag, _inbox);
 
                     Console.WriteLine("Created " + _unreadMsg.Length + " User Stories");
                 }
