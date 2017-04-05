@@ -40,7 +40,7 @@ namespace Rally
             }
         }
 
-        public void EnsureOutlookIsAuthenticated()
+        private void EnsureOutlookIsAuthenticated()
         {
             _imap = new Imap4Client();
             _imap.ConnectSsl(EmailConstant.OutlookHost, EmailConstant.ImapPort);
@@ -1146,7 +1146,6 @@ namespace Rally
 
         }
         #endregion
-
     }
 
 }

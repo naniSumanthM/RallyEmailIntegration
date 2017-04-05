@@ -5,6 +5,7 @@ using System.IO;
 using System.Net;
 using MailKit;
 using MailKit.Net.Imap;
+using MailKit.Search;
 using MailKit.Security;
 
 namespace Email
@@ -269,19 +270,17 @@ namespace Email
             {
                 //Authenticate
                 imap.ConnectSsl(Constant.OutlookImapHost, 993);
-                imap.Login(Constant.OutlookUserName, Constant.GenericPassword);
+                imap.Login("", Constant.GenericPassword);
 
-
-                //configure google enviornment
-                Mailbox inbox = imap.SelectMailbox("INBOX");
-                int[] unread = inbox.Search("UNSEEN");
+                Mailbox inbox = imap.SelectMailbox(Constant.InboxFolder);
+                int[] unread = inbox.Search(Constant.UnseenMessages);
                 Console.WriteLine("Unread Messages: " + unread.Length);
 
                 if (unread.Length > 0)
                 {
-                    foreach (var item in unread)
+                    for (int i = 0; i < unread.Length; i++)
                     {
-                        inbox.MoveMessage(item, "Processed");
+                       inbox.MoveMessage(i, "Tickets");
                     }
                 }
                 else
@@ -461,23 +460,42 @@ namespace Email
 
         #endregion
 
-        #region MimeKit()
+        #region MimeKitTest()
 
         /// <summary>
         /// Authenticate with Mime Kit
         /// </summary>
-        public void AuthenticateWithMimeKit()
+        public void MimeKitTest()
         {
             using (var client = new ImapClient())
             {
-                client.Connect("imap.gmail.com", Constant.ImapPort, SecureSocketOptions.SslOnConnect);
-                client.Authenticate("rallyintegration@gmail.com", "iYmcmb24");
-                Console.WriteLine(client.IsConnected);
+                client.Connect("imap-mail.outlook.com", 993, SecureSocketOptions.SslOnConnect);
+                client.Authenticate("rallyintegration@outlook.com", "iYmcmb24");
+                Console.WriteLine(client.IsAuthenticated);
+
+                if (client.IsConnected == true)
+                {
+                    FolderAccess inboxAccess = client.Inbox.Open(FolderAccess.ReadWrite);
+                    IMailFolder destination = client.GetFolder("Tickets");
+                    IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
+
+                    if (destination != null)
+                    {
+                        client.Inbox.MoveTo(uids, destination);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Something is wrong");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("ERROR>>>>>");
+                }
 
                 client.Disconnect(true);
             }
         }
-
         #endregion
     }
 }

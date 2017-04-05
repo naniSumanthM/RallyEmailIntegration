@@ -345,10 +345,6 @@
                         PushSlackNotification(i);
                     }
 
-                    //package deal - either move and mark as unread or skip 349 350
-                    //MarkAsUnread(_unreadMsg, _markAsUnreadFlag, _inbox);
-                    //MoveMessage(_unreadMsg, _markAsUnreadFlag, _inbox);
-
                     Console.WriteLine("Created " + _unreadMsg.Length + " User Stories");
                 }
                 else
@@ -371,6 +367,11 @@
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
+            }
+            finally
+            {
+                _imap4Client.Disconnect();
+                _rallyApi.Logout();
             }
         }
     }

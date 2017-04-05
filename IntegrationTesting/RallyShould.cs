@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using ActiveUp.Net.Mail;
+using ActiveUp.Net.Security;
 using ActiveUp.Net.WhoIs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Rally;
@@ -34,6 +35,9 @@ namespace IntegrationTesting
 
             //Assert
             Assert.AreEqual("Authenticated", api.AuthenticationState.ToString());
+
+            api.Logout();
+            Assert.AreEqual("NotAuthorized", api.AuthenticationState.ToString());
         }
 
         /// <summary>
@@ -241,27 +245,28 @@ namespace IntegrationTesting
         [TestMethod]
         public void EnsureUnreadMessagesCanBeMoved()
         {
-            var _selectedMailBox = "MoveA";
-            var _targetMailBox = "MoveB";
-
+            var _selectedMailBox = "Inbox";
+            var _targetMailBox = "Processed";
+            Mailbox finalMailbox;
+            
             using (var client = new Imap4Client())
             {
-                client.ConnectSsl("imap-mail.outlook.com", 993);
-                client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+                client.ConnectSsl("imap.gmail.com", 993);
+                client.Login("rallyintegration@gmail.com", "iYmcmb24");
 
-                var mails = client.SelectMailbox(_selectedMailBox);
-                var mailMessages = mails.Search("UNSEEN");
+                Mailbox mails = client.SelectMailbox(_selectedMailBox);
+                var mailMessages = mails.Search("ALL");
 
-                for (int i = 0; i < mailMessages.Length; i++)
+                foreach(var x in mailMessages)
                 {
-                    mails.MoveMessage(i, _targetMailBox);
+                    mails.MoveMessage(x, _targetMailBox);
                 }
 
-                client.SelectMailbox(_selectedMailBox);
+                finalMailbox = client.SelectMailbox("Processed");
                 client.Disconnect();
             }
 
-            Assert.AreEqual(15, 15);
+            Assert.AreEqual(15, finalMailbox.MessageCount);
         }
 
         /// <summary>
