@@ -2,11 +2,17 @@
 using ActiveUp.Net.Mail;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Runtime.Remoting.Messaging;
+using System.Threading;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
 using MailKit.Security;
+using MimeKit;
+using Header = ActiveUp.Net.Mail.Header;
+using MimePart = ActiveUp.Net.Mail.MimePart;
 
 namespace Email
 {
@@ -533,6 +539,53 @@ namespace Email
                 }
             }
         }
+        #endregion
+
+        #region : get attachemnts using mimeKit
+
+        public void getAtttachments()
+        {
+            using (var client = new ImapClient())
+            {
+                //authenticate
+                client.Connect("imap.gmail.com", 993, SecureSocketOptions.SslOnConnect);
+                client.Authenticate("rallyintegration@gmail.com", "iYmcmb24");
+                Console.WriteLine(client.IsAuthenticated);
+
+                if (client.IsConnected == true)
+                {
+                    FolderAccess inboxAccess = client.Inbox.Open(FolderAccess.ReadWrite);
+                    IMailFolder destination = client.GetFolder("Inbox");
+                    //gets the id,s of all the messages within a gievn inbox
+                    IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
+                    string saveAttachmentPath = "C:\\Users\\mimeKitAttachments\\";
+
+
+                    if (destination != null)
+                    {
+                        foreach (var x in uids)
+                        {
+                            //What does get message do, is this the best way to get the message?
+                            //I have read about examples like fetch to strip specific parts of a message
+
+                            var message = destination.GetMessage(x);
+
+                            foreach (MimeEntity attachment in message.BodyParts)
+                            {
+                                //TODO: store the attachments with the original filename within the email to the local disk
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    throw new NullReferenceException();
+                }
+            }
+        }
+
+
+
         #endregion
 
     }
