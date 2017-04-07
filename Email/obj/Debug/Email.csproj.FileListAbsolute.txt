@@ -62,3 +62,8 @@ C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\MailKit.dll
 C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\MimeKit.dll
 C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\MailKit.xml
 C:\Users\maddirsh\Desktop\IntegrationService\Email\bin\Debug\MimeKit.xml
+C:\Users\suman\Documents\GitHub\IntegrationService\Email\bin\Debug\BouncyCastle.Crypto.dll
+C:\Users\suman\Documents\GitHub\IntegrationService\Email\bin\Debug\MailKit.dll
+C:\Users\suman\Documents\GitHub\IntegrationService\Email\bin\Debug\MimeKit.dll
+C:\Users\suman\Documents\GitHub\IntegrationService\Email\bin\Debug\MailKit.xml
+C:\Users\suman\Documents\GitHub\IntegrationService\Email\bin\Debug\MimeKit.xml

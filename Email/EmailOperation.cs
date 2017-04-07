@@ -77,7 +77,7 @@ namespace Email
                 //Stage the enviornment
                 Mailbox inbox = client.SelectMailbox("INBOX");
                 int[] unread = inbox.Search("UNSEEN");
-                    //returns an int of the number of unread email objects, given an inbox
+                //returns an int of the number of unread email objects, given an inbox
                 Console.WriteLine("Unread Messages: " + unread.Length);
 
                 if (unread.Length > 0)
@@ -280,7 +280,7 @@ namespace Email
                 {
                     for (int i = 0; i < unread.Length; i++)
                     {
-                       inbox.MoveMessage(i, "Tickets");
+                        inbox.MoveMessage(i, "Tickets");
                     }
                 }
                 else
@@ -333,7 +333,7 @@ namespace Email
                     Message msg = inbox.Fetch.MessageObject(id);
                     markAsUnreadFlag.Add("SEEN"); //adding all the read email objects to the flag collection
                     inbox.RemoveFlags(id, markAsUnreadFlag);
-                        //then removing the flags, making each mail object as unread
+                    //then removing the flags, making each mail object as unread
                 }
             }
             catch (Imap4Exception ie)
@@ -443,7 +443,7 @@ namespace Email
                 for (int i = 0; i < unread.Length; i++)
                 {
                     var unreadMessage = inbox.Fetch.MessageObject(unread[i]);
-                    
+
                     foreach (MimePart embedded in unreadMessage.EmbeddedObjects)
                     {
                         var filename = embedded.ContentName;
@@ -460,7 +460,7 @@ namespace Email
 
         #endregion
 
-        #region MimeKitTest()
+        #region MoveMessagesUsingMimeKit()
 
         /// <summary>
         /// Authenticate with Mime Kit
@@ -497,5 +497,43 @@ namespace Email
             }
         }
         #endregion
+
+        #region : get Subject & Body with MimeKit
+        /// <summary>
+        /// Looks like Microsoft keeps blocking me from the email server
+        /// </summary>
+        public void getMessages()
+        {
+            using (var client = new ImapClient())
+            {
+                client.Connect("imap.gmail.com", 993, SecureSocketOptions.SslOnConnect);
+                client.Authenticate("rallyintegration@gmail.com", "iYmcmb24");
+                Console.WriteLine(client.IsAuthenticated);
+
+                if (client.IsConnected == true)
+                {
+                    FolderAccess inboxAccess = client.Inbox.Open(FolderAccess.ReadWrite);
+                    IMailFolder destination = client.GetFolder("Inbox");
+                    IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
+
+                    if (destination != null)
+                    {
+                        foreach (var x in uids)
+                        {
+                            var message = destination.GetMessage(x);
+                            string subject = message.Subject;
+                            string body = message.TextBody;
+                            Console.WriteLine(body);
+                        }
+                    }
+                }
+                else
+                {
+                    throw new NullReferenceException();
+                }
+            }
+        }
+        #endregion
+
     }
 }
