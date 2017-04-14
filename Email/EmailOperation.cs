@@ -728,16 +728,19 @@ namespace Email
                     foreach (MimeEntity attachment in message.BodyParts)
                     {
                         string fileName = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
-                        string regularAttachment = Path.Combine(Constant.RegularAttachmentsDirectory, fileName);
-                        string inlineAttachment = Path.Combine(Constant.InlineAttachmentsDirectory, fileName);
-
                         if (!string.IsNullOrWhiteSpace(fileName))
                         {
+                            //need to rename the file even before the combining the filePath
+                            if (fileName.Equals("pastedImage") && attachment is MessagePart)
+                            {
+                                fileName = string.Format("pastedImage-{0}", ++unnamed);
+                            }
+
+                            string regularAttachment = Path.Combine(Constant.RegularAttachmentsDirectory, fileName);
+                            string inlineAttachment = Path.Combine(Constant.InlineAttachmentsDirectory, fileName);
+
                             if (attachment is MessagePart)
                             {
-                                if (fileName.Equals("pastedImage"))
-                                    fileName = string.Format("pastedImage-{0}", ++unnamed);
-
                                 using (var inlineStream = File.Create(inlineAttachment))
                                 {
                                     var rfc822 = (MessagePart)attachment;
