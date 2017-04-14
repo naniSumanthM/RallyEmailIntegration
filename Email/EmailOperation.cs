@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.Remoting.Messaging;
-using System.Threading;
 using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
@@ -469,34 +467,37 @@ namespace Email
         #region MoveMessagesUsingMimeKit()
 
         /// <summary>
-        /// Authenticate with Mime Kit
+        /// Move Messages with MimeKit, works with outlook, but not gmail
         /// </summary>
-        public void MimeKitTest()
+        public void moveInboxMessages()
         {
             using (var client = new ImapClient())
             {
-                client.Connect("imap-mail.outlook.com", 993, SecureSocketOptions.SslOnConnect);
-                client.Authenticate("rallyintegration@outlook.com", "iYmcmb24");
-                Console.WriteLine(client.IsAuthenticated);
+                client.Connect(Constant.GoogleImapHost, Constant.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
+                Console.WriteLine(client.IsConnected);
 
                 if (client.IsConnected == true)
                 {
                     FolderAccess inboxAccess = client.Inbox.Open(FolderAccess.ReadWrite);
-                    IMailFolder destination = client.GetFolder("Tickets");
+                    IMailFolder destination = client.GetFolder(Constant.ProcessedFolder);
                     IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
 
-                    if (destination != null)
+                    if (destination != null && uids.Count > 0)
                     {
                         client.Inbox.MoveTo(uids, destination);
+                        Console.WriteLine("Moved Messages");
                     }
                     else
                     {
-                        Console.WriteLine("Something is wrong");
+                        //create the folder 
+                        //move message
+                        throw new Exception();
                     }
                 }
                 else
                 {
-                    Console.WriteLine("ERROR>>>>>");
+                    throw new Exception();
                 }
 
                 client.Disconnect(true);
@@ -505,15 +506,16 @@ namespace Email
         #endregion
 
         #region : get Subject & Body with MimeKit
+
         /// <summary>
         /// Looks like Microsoft keeps blocking me from the email server
         /// </summary>
-        public void getMessages()
+        public void getEmailSubjectBody()
         {
             using (var client = new ImapClient())
             {
-                client.Connect("imap.gmail.com", 993, SecureSocketOptions.SslOnConnect);
-                client.Authenticate("rallyintegration@gmail.com", "iYmcmb24");
+                client.Connect(Constant.GoogleImapHost, Constant.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
                 Console.WriteLine(client.IsAuthenticated);
 
                 if (client.IsConnected == true)
@@ -539,6 +541,39 @@ namespace Email
                 }
             }
         }
+
+        #endregion
+
+        #region: SetReadFlag
+        public void addFlagRead()
+        {
+            using (var client = new ImapClient())
+            {
+                client.Connect(Constant.GoogleImapHost, Constant.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.AuthenticationMechanisms.Remove(Constant.GoogleOAuth);
+                client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
+                Console.WriteLine(client.IsAuthenticated);
+
+                if (client.IsConnected == true)
+                {
+                    FolderAccess inboxAccess = client.Inbox.Open(FolderAccess.ReadWrite);
+                    IMailFolder destination = client.GetFolder(Constant.InboxFolder);
+                    IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
+
+                    if (destination != null)
+                    {
+                        for (int i = 0; i < uids.Count; i++)
+                        {
+                            destination.SetFlags(i, MessageFlags.Seen, true);
+                        }
+
+                        Console.WriteLine("Done");
+                    }
+                }
+
+            }
+        }
+
         #endregion
 
         #region : get attachemnts using mimeKit
@@ -548,45 +583,184 @@ namespace Email
             using (var client = new ImapClient())
             {
                 //authenticate
-                client.Connect("imap.gmail.com", 993, SecureSocketOptions.SslOnConnect);
-                client.Authenticate("rallyintegration@gmail.com", "iYmcmb24");
-                Console.WriteLine(client.IsAuthenticated);
+                client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
+                client.Connect(Constant.GoogleImapHost, Constant.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.AuthenticationMechanisms.Remove(Constant.GoogleOAuth);
+                client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
 
                 if (client.IsConnected == true)
                 {
                     FolderAccess inboxAccess = client.Inbox.Open(FolderAccess.ReadWrite);
-                    IMailFolder destination = client.GetFolder("Inbox");
-                    //gets the id,s of all the messages within a gievn inbox
+                    IMailFolder inboxFolder = client.GetFolder(Constant.InboxFolder);
                     IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
-                    string saveAttachmentPath = "C:\\Users\\mimeKitAttachments\\";
 
-
-                    if (destination != null)
+                    if (inboxFolder != null & inboxFolder.Unread > 0)
                     {
-                        foreach (var x in uids)
+                        foreach (UniqueId msgId in uids)
                         {
-                            //What does get message do, is this the best way to get the message?
-                            //I have read about examples like fetch to strip specific parts of a message
+                            MimeMessage message = inboxFolder.GetMessage(msgId);
 
-                            var message = destination.GetMessage(x);
-
-                            foreach (MimeEntity attachment in message.BodyParts)
+                            foreach (MimeEntity attachment in message.Attachments)
                             {
-                                //TODO: store the attachments with the original filename within the email to the local disk
+
+
                             }
                         }
                     }
                 }
+
                 else
                 {
                     throw new NullReferenceException();
                 }
             }
         }
+        #endregion
+
+        #region messageSummaryAttachments
+        /// <summary>
+        /// Only downloading parts of the message, 
+        /// </summary>
 
 
+        public void getAllAttachments()
+        {
+            using (var client = new ImapClient())
+            {
+                client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
+                client.Connect(Constant.GoogleImapHost, Constant.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.AuthenticationMechanisms.Remove(Constant.GoogleOAuth);
+                client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
+
+                if (client.IsConnected == true)
+                {
+                    FolderAccess inboxAccess = client.Inbox.Open(FolderAccess.ReadWrite);
+                    IList<IMessageSummary> items = client.Inbox.Fetch(0, -1, MessageSummaryItems.UniqueId | MessageSummaryItems.BodyStructure | MessageSummaryItems.Envelope);
+                    int unnamed = 0;
+
+                    foreach (var message in items)
+                    {
+                        foreach (var attachment in message.BodyParts)
+                        {
+                            MimeKit.MimePart mime = (MimeKit.MimePart)client.Inbox.GetBodyPart(message.UniqueId, attachment);
+                            string fileName = mime.FileName;
+
+                            if (string.IsNullOrEmpty(fileName))
+                            {
+                                fileName = string.Format("unnamed-{0}", ++unnamed);
+                            }
+
+                            FormatOptions options = FormatOptions.Default.Clone();
+                            options.ParameterEncodingMethod = ParameterEncodingMethod.Rfc2047;
+
+                            using (FileStream stream = File.Create(Path.Combine("C:\\Users\\maddirsh\\Desktop\\MimeKit\\", fileName)))
+                            {
+                                mime.ContentObject.DecodeTo(stream);
+                            }
+
+                            Console.WriteLine("End");
+                        }
+                    }
+                }
+                else
+                {
+                    throw new Exception();
+                }
+            }
+        }
 
         #endregion
+
+        /// <summary>
+        /// Download the messages, and get the attachments
+        /// </summary>
+
+        #region retreiveAttachmentsFromDownloaded
+        public void retreiveAttachmentsFromDownloadingMessages()
+        {
+            using (var client = new ImapClient())
+            {
+                client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
+                client.Connect(Constant.GoogleImapHost, Constant.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.AuthenticationMechanisms.Remove(Constant.GoogleOAuth);
+                client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
+
+                client.Inbox.Open(FolderAccess.ReadWrite);
+                IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
+                int unnamed = 0;
+
+                foreach (UniqueId uid in uids)
+                {
+                    MimeMessage message = client.Inbox.GetMessage(uid);
+
+                    foreach (MimeEntity attachment in message.BodyParts)
+                    {
+                        // literally copied & pasted from the FAQ:
+                        string fileName = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
+
+                        //if (string.IsNullOrEmpty(fileName))
+                        //{
+                        //    // This attachment doesn't have a filename, I guess we'll skip it..
+                        //    fileName = string.Format("unnamed-{0}", ++unnamed);
+                        //}
+
+                        if (!string.IsNullOrWhiteSpace(fileName))
+                        {
+                            //ONLY download the file if they all have valid names
+                            string path = Path.Combine("C:\\Users\\maddirsh\\Desktop", fileName);
+
+
+                            //this use to be outside of the block, and it is still downloading the bodypart html, and stuff
+                            // also literally copied and pasted from the FAQ:
+                            using (var stream = File.Create(path))
+                            {
+                                if (attachment is MessagePart)
+                                {
+                                    var rfc822 = (MessagePart)attachment;
+
+                                    rfc822.Message.WriteTo(stream);
+                                }
+                                else
+                                {
+                                    var part = (MimeKit.MimePart)attachment;
+                                    part.ContentObject.DecodeTo(stream);
+                                }
+                            }
+
+                        }
+
+                        Console.WriteLine("Downloaded: " + fileName);
+
+                    }
+                }
+            }
+        }
+        #endregion
+
+        public void downloadMessagesLocally()
+        {
+            using (var client = new ImapClient(new ProtocolLogger("imap.log")))
+            {
+                client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
+                client.Connect(Constant.GoogleImapHost, Constant.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.AuthenticationMechanisms.Remove(Constant.GoogleOAuth);
+                client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
+
+                client.Inbox.Open(FolderAccess.ReadWrite);
+                IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
+
+                foreach (var uid in uids)
+                {
+                    MimeMessage message = client.Inbox.GetMessage(uid);
+                    // write the message to a file
+                    message.WriteTo(string.Format("C:\\Users\\maddirsh\\Desktop\\MimeKit\\{0}.eml", uid));
+                }
+                Console.WriteLine("Done");
+                client.Disconnect(true);
+            }
+
+        }
+
 
     }
 }
