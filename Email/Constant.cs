@@ -17,7 +17,10 @@
         public const string InboxFolder = "INBOX";
         public const string UnseenMessages = "UNSEEN";
         public const string All = "ALL";
-        public const string RegularAttachmentsDirectory = "C:\\Users\\maddirsh\\Desktop\\AllAttachments\\regularAttachments\\";
-        public const string InlineAttachmentsDirectory = "C:\\Users\\maddirsh\\Desktop\\AllAttachments\\inlineAttachments\\";
+        //removed \\ at the end
+        public const string RegularAttachmentsDirectory = "C:\\Users\\maddirsh\\Desktop\\AllAttachments\\regularAttachments";
+        public const string InlineAttachmentsDirectory = "C:\\Users\\maddirsh\\Desktop\\AllAttachments\\inlineAttachments";
+        public const string tempPath = "C:\\Users\\maddirsh\\Desktop";
+
     }
 }

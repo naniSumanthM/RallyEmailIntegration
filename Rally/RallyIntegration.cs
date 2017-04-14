@@ -219,7 +219,7 @@
         {
             _inlineFileName = embeddedImg.ContentName;
             _inlineFileBinaryContent = embeddedImg.BinaryContent;
-            File.WriteAllBytes(string.Concat(StorageConstant.InlineImageDirectory, _inlineFileName),
+            File.WriteAllBytes(Path.Combine(StorageConstant.InlineImageDirectory, _inlineFileName),
                 _inlineFileBinaryContent);
         }
 

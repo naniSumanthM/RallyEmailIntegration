@@ -4,10 +4,10 @@ namespace Email
 {
     class Demo
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             EmailOperation operation = new EmailOperation();
-            operation.retreiveAttachmentsFromDownloadingMessages();
+            operation.finalDownload();
 
             Console.ReadLine();
         }
