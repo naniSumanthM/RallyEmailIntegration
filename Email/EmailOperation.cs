@@ -464,6 +464,8 @@ namespace Email
 
         #endregion
 
+        //MimeKit API
+
         #region download EML Files locally
 
         public void downloadMessagesLocally()
@@ -605,7 +607,11 @@ namespace Email
         #endregion
 
         #region messageSummaryAttachments
-        public void getAllAttachments()
+
+        /// <summary>
+        /// This will overwrite the files for which, the server pulls the same names
+        /// </summary>
+        public void getAttachmentsThroughMessageSummary()
         {
             using (var client = new ImapClient())
             {
@@ -655,10 +661,8 @@ namespace Email
 
         #region retreiveAttachmentsFromDownloaded
         /// <summary>
-        /// There is a chance that an attached image can be named as pasted image.
-        /// Then one attachment might be skipped.
-        /// </summary>
-
+        /// This will overwrite the files for which, the server pulls the same names
+        /// </summary
         public void retreiveAttachmentsFromDownloadingMessages()
         {
             using (var client = new ImapClient())
@@ -708,58 +712,13 @@ namespace Email
         }
         #endregion
 
-        public void downloadAndSortAttachments()
-        {
-            using (var client = new ImapClient())
-            {
-                client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
-                client.Connect(Constant.GoogleImapHost, Constant.ImapPort, SecureSocketOptions.SslOnConnect);
-                client.AuthenticationMechanisms.Remove(Constant.GoogleOAuth);
-                client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
+        #region DownloadAttachmentsFileIoWay
 
-                client.Inbox.Open(FolderAccess.ReadWrite);
-                IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
-                int pastedImage = 0;
-
-                foreach (UniqueId uid in uids)
-                {
-                    MimeMessage message = client.Inbox.GetMessage(uid);
-
-                    foreach (MimeEntity attachment in message.Attachments)
-                    {
-                        string fileName = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
-
-                        if (!string.IsNullOrWhiteSpace(fileName))
-                        {
-                            if (attachment is MessagePart)
-                            {
-                                fileName = String.Format("pastedImage-{0}", ++pastedImage);
-                                string inlineAttachment = Path.Combine(Constant.InlineAttachmentsDirectory, fileName);
-                                using (var inlineStream = File.Create(inlineAttachment))
-                                {
-                                    MessagePart rfc822 = (MessagePart)attachment;
-                                    rfc822.Message.WriteTo(inlineStream);
-                                }
-                            }
-                            else
-                            {
-                                string regularAttachment = Path.Combine(Constant.RegularAttachmentsDirectory, fileName);
-                                using (var attachmentStream = File.Create(regularAttachment))
-                                {
-                                    MimeKit.MimePart part = (MimeKit.MimePart)attachment;
-                                    part.ContentObject.DecodeTo(attachmentStream);
-                                }
-                            }
-
-                            Console.WriteLine("Downloaded: " + fileName);
-                        }
-                    }
-                }
-            }
-        }
-
-
-        public void newDownloadWay()
+        /// <summary>
+        /// Will Download both the attachments and inline attachments in one single directory
+        /// Will not OVERWRITE files that have the same filenames
+        /// </summary>
+        public void DownloadAttachmentsFileIoWay()
         {
             using (var client = new ImapClient())
             {
@@ -779,6 +738,7 @@ namespace Email
                     foreach (MimeEntity attachment in message.BodyParts)
                     {
                         string fileName = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
+                        string regularAttachment = Path.Combine(Constant.RegularAttachmentsDirectory, fileName);
 
                         if (!string.IsNullOrWhiteSpace(fileName))
                         {
@@ -791,9 +751,7 @@ namespace Email
                                     rfc822.Message.WriteTo(inlineStream);
                                 }
                             }
-
-                            string regularAttachment = Path.Combine(Constant.RegularAttachmentsDirectory, fileName);
-
+                            
                             if (File.Exists(regularAttachment))
                             {
                                 string extension = Path.GetExtension(regularAttachment);
@@ -810,13 +768,11 @@ namespace Email
 
                             Console.WriteLine("Downloaded: " + fileName);
                         }
-
                     }
                 }
             }
-        }
+        } 
+        #endregion
     }
 }
 
-
-//TODO: Either make 2 loops one for attachments, and one for body parts 
