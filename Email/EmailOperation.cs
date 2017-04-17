@@ -719,42 +719,38 @@ namespace Email
 
                 client.Inbox.Open(FolderAccess.ReadWrite);
                 IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
-                int unnamed = 0;
+                int pastedImage = 0;
 
                 foreach (UniqueId uid in uids)
                 {
                     MimeMessage message = client.Inbox.GetMessage(uid);
 
-                    foreach (MimeEntity attachment in message.BodyParts)
+                    foreach (MimeEntity attachment in message.Attachments)
                     {
                         string fileName = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
+
                         if (!string.IsNullOrWhiteSpace(fileName))
                         {
-                            //need to rename the file even before the combining the filePath
-                            if (fileName.Equals("pastedImage") && attachment is MessagePart)
-                            {
-                                fileName = string.Format("pastedImage-{0}", ++unnamed);
-                            }
-
-                            string regularAttachment = Path.Combine(Constant.RegularAttachmentsDirectory, fileName);
-                            string inlineAttachment = Path.Combine(Constant.InlineAttachmentsDirectory, fileName);
-
                             if (attachment is MessagePart)
                             {
+                                fileName = String.Format("pastedImage-{0}", ++pastedImage);
+                                string inlineAttachment = Path.Combine(Constant.InlineAttachmentsDirectory, fileName);
                                 using (var inlineStream = File.Create(inlineAttachment))
                                 {
-                                    var rfc822 = (MessagePart)attachment;
+                                    MessagePart rfc822 = (MessagePart)attachment;
                                     rfc822.Message.WriteTo(inlineStream);
                                 }
                             }
                             else
                             {
+                                string regularAttachment = Path.Combine(Constant.RegularAttachmentsDirectory, fileName);
                                 using (var attachmentStream = File.Create(regularAttachment))
                                 {
-                                    var part = (MimeKit.MimePart)attachment;
+                                    MimeKit.MimePart part = (MimeKit.MimePart)attachment;
                                     part.ContentObject.DecodeTo(attachmentStream);
                                 }
                             }
+
                             Console.WriteLine("Downloaded: " + fileName);
                         }
                     }
@@ -763,6 +759,64 @@ namespace Email
         }
 
 
+        public void newDownloadWay()
+        {
+            using (var client = new ImapClient())
+            {
+                client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
+                client.Connect(Constant.GoogleImapHost, Constant.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.AuthenticationMechanisms.Remove(Constant.GoogleOAuth);
+                client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
 
+                client.Inbox.Open(FolderAccess.ReadWrite);
+                IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
+                int anotherOne = 0;
+
+                foreach (UniqueId uid in uids)
+                {
+                    MimeMessage message = client.Inbox.GetMessage(uid);
+
+                    foreach (MimeEntity attachment in message.BodyParts)
+                    {
+                        string fileName = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
+
+                        if (!string.IsNullOrWhiteSpace(fileName))
+                        {
+                            if (attachment is MessagePart)
+                            {
+                                string inlineAttachment = Path.Combine(Constant.InlineAttachmentsDirectory, fileName);
+                                using (var inlineStream = File.Create(inlineAttachment))
+                                {
+                                    MessagePart rfc822 = (MessagePart)attachment;
+                                    rfc822.Message.WriteTo(inlineStream);
+                                }
+                            }
+
+                            string regularAttachment = Path.Combine(Constant.RegularAttachmentsDirectory, fileName);
+
+                            if (File.Exists(regularAttachment))
+                            {
+                                string extension = Path.GetExtension(regularAttachment);
+                                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(regularAttachment);
+                                fileName = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++anotherOne, extension);
+                                regularAttachment = Path.Combine(Constant.RegularAttachmentsDirectory, fileName);
+                            }
+
+                            using (var attachmentStream = File.Create(regularAttachment))
+                            {
+                                MimeKit.MimePart part = (MimeKit.MimePart)attachment;
+                                part.ContentObject.DecodeTo(attachmentStream);
+                            }
+
+                            Console.WriteLine("Downloaded: " + fileName);
+                        }
+
+                    }
+                }
+            }
+        }
     }
 }
+
+
+//TODO: Either make 2 loops one for attachments, and one for body parts 
