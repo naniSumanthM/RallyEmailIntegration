@@ -3557,6 +3557,7 @@
             Parses the MIME part.
             </summary>
             <param name="binaryData">The data.</param>
+            <param name="message">Message object to update</param>
             <returns></returns>
         </member>
         <member name="M:ActiveUp.Net.Mail.Parser.ParseHeader(System.String)">

@@ -1,4 +1,5 @@
-﻿using MailKit;
+﻿using System.Linq;
+using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
 using MailKit.Security;
@@ -1151,9 +1152,8 @@ namespace Rally
         }
         #endregion
 
-        public void syncUsingMimeKit(string workspace, string project)
+        public void SyncUsingMimeKit(string workspace, string project)
         {
-            //Rally variables
             DynamicJsonObject toCreate = new DynamicJsonObject();
             toCreate[RallyConstant.WorkSpace] = workspace;
             toCreate[RallyConstant.Project] = project;
@@ -1163,30 +1163,30 @@ namespace Rally
             CreateResult attachmentContentCreateResult;
             CreateResult attachmentContainerCreateResult;
 
-            string[] allAttachments = Directory.GetFiles(StorageConstant.MimeKitAttachmentsDirectory);
+            string[] allAttachments;
             Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
             string emailSubject;
             string emailBody;
+            string userStoryReference;
+            int unnamed = 0;
+            int anotherOne = 0;
+            string base64String;
+            string attachmentFileName;
+            string fileName;
 
             EnsureRallyIsAuthenticated();
 
             using (var client = new ImapClient())
             {
-                //gmail authentication
                 client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
                 client.Connect(EmailConstant.GoogleHost, EmailConstant.ImapPort, SecureSocketOptions.SslOnConnect);
                 client.AuthenticationMechanisms.Remove(EmailConstant.GoogleOAuth);
                 client.Authenticate(EmailConstant.GoogleUsername, EmailConstant.GenericPassword);
 
-                //inbox folder set up
                 client.Inbox.Open(FolderAccess.ReadWrite);
                 IMailFolder inboxFolder = client.GetFolder("Inbox");
                 IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
-                int unnamed = 0;
-                int anotherOne = 0;
-                string userStoryReference;
 
-                //itearte through the IList
                 foreach (UniqueId uid in uids)
                 {
                     MimeMessage message = inboxFolder.GetMessage(uid);
@@ -1204,53 +1204,44 @@ namespace Rally
 
                     foreach (MimeEntity attachment in message.BodyParts)
                     {
-                        string fileName = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
-                        string regularAttachment = Path.Combine(StorageConstant.MimeKitAttachmentsDirectory, fileName);
+                        string attachmentFile = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
+                        string attachmentFilePath = String.Concat(StorageConstant.MimeKitAttachmentsDirectory, Path.GetFileName(attachmentFile));
 
-                        if (!string.IsNullOrWhiteSpace(fileName))
+                        if (!string.IsNullOrWhiteSpace(attachmentFile))
                         {
-                            if (attachment is MessagePart)
+                            if (File.Exists(attachmentFilePath))
                             {
-                                string inlineAttachment = Path.Combine(StorageConstant.MimeKitAttachmentsDirectory, fileName);
-                                using (var inlineStream = File.Create(inlineAttachment))
-                                {
-                                    MessagePart rfc822 = (MessagePart)attachment;
-                                    rfc822.Message.WriteTo(inlineStream);
-                                }
+                                string extension = Path.GetExtension(attachmentFilePath);
+                                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachmentFilePath);
+                                attachmentFile = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++anotherOne,
+                                    extension);
+                                attachmentFilePath = Path.Combine(StorageConstant.MimeKitAttachmentsDirectory,
+                                    attachmentFile);
                             }
 
-                            if (File.Exists(regularAttachment))
-                            {
-                                string extension = Path.GetExtension(regularAttachment);
-                                string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(regularAttachment);
-                                fileName = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++anotherOne, extension);
-                                regularAttachment = Path.Combine(StorageConstant.MimeKitAttachmentsDirectory, fileName);
-                            }
-
-                            using (var attachmentStream = File.Create(regularAttachment))
+                            using (var attachmentStream = File.Create(attachmentFilePath))
                             {
                                 MimeKit.MimePart part = (MimeKit.MimePart)attachment;
                                 part.ContentObject.DecodeTo(attachmentStream);
                             }
 
-                            Console.WriteLine("Downloaded: " + fileName);
+                            Console.WriteLine("Downloaded: " + attachmentFile);
                         }
                     }
 
-                    foreach (var file in allAttachments)
+                    allAttachments = Directory.GetFiles(StorageConstant.MimeKitAttachmentsDirectory);
+                    foreach (string file in allAttachments)
                     {
-                        //Converting attachments to base 64
-                        string base64String = fileToBase64(file);
-                        string attachmentFileName = Path.GetFileName(file);
-                        var fileName = string.Empty;
+                        base64String = fileToBase64(file);
+                        attachmentFileName = Path.GetFileName(file);
+                        fileName = string.Empty;
 
-                        //populate the dictionary - eliminate adding duplicate files
                         if (!(attachmentsDictionary.TryGetValue(base64String, out fileName)))
                         {
+                            Console.WriteLine("Added to Dictionary: " + file);
                             attachmentsDictionary.Add(base64String, attachmentFileName);
                         }
 
-                        Console.WriteLine("Uploading: " + file);
                         File.Delete(file);
                     }
 
@@ -1261,7 +1252,8 @@ namespace Rally
                         {
                             //create attachment content
                             attachmentContent[RallyConstant.Content] = attachmentPair.Key;
-                            attachmentContentCreateResult = _rallyRestApi.Create(RallyConstant.AttachmentContent, attachmentContent);
+                            attachmentContentCreateResult = _rallyRestApi.Create(RallyConstant.AttachmentContent,
+                                attachmentContent);
                             userStoryReference = attachmentContentCreateResult.Reference;
 
                             //create attachment contianer
@@ -1272,7 +1264,8 @@ namespace Rally
                             attachmentContainer[RallyConstant.ContentType] = "file/";
 
                             //Create & associate the attachment
-                            attachmentContainerCreateResult = _rallyRestApi.Create(RallyConstant.Attachment, attachmentContainer);
+                            attachmentContainerCreateResult = _rallyRestApi.Create(RallyConstant.Attachment,
+                                attachmentContainer);
                         }
                         catch (WebException e)
                         {
@@ -1280,10 +1273,11 @@ namespace Rally
                         }
                     }
                     attachmentsDictionary.Clear();
-                    //mark as read or move
-                    //json post to slack
+
+                    Console.WriteLine("User Story: " + message.Subject);
                 }
             }
         }
+
     }
 }

@@ -101,3 +101,8 @@ C:\Users\maddirsh\Documents\GitHub\IntegrationService\Rally\bin\Debug\Rally.Rest
 C:\Users\maddirsh\Documents\GitHub\IntegrationService\Rally\bin\Debug\RestSharp.xml
 C:\Users\maddirsh\Documents\GitHub\IntegrationService\Rally\bin\Debug\ServiceStack.Text.xml
 C:\Users\maddirsh\Documents\GitHub\IntegrationService\Rally\obj\Debug\Rally.csprojResolveAssemblyReference.cache
+C:\Users\suman\Documents\GitHub\IntegrationService\Rally\bin\Debug\BouncyCastle.Crypto.dll
+C:\Users\suman\Documents\GitHub\IntegrationService\Rally\bin\Debug\MailKit.dll
+C:\Users\suman\Documents\GitHub\IntegrationService\Rally\bin\Debug\MimeKit.dll
+C:\Users\suman\Documents\GitHub\IntegrationService\Rally\bin\Debug\MailKit.xml
+C:\Users\suman\Documents\GitHub\IntegrationService\Rally\bin\Debug\MimeKit.xml

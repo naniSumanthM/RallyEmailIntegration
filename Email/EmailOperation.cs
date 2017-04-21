@@ -735,19 +735,19 @@ namespace Email
                     foreach (MimeEntity attachment in message.BodyParts)
                     {
                         string fileName = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
-                        string regularAttachment = Path.Combine(Constant.RegularAttachmentsDirectory, fileName);
+                        string regularAttachment = string.Concat(Constant.RegularAttachmentsDirectory, fileName);
 
                         if (!string.IsNullOrWhiteSpace(fileName))
                         {
-                            if (attachment is MessagePart)
-                            {
-                                string inlineAttachment = Path.Combine(Constant.InlineAttachmentsDirectory, fileName);
-                                using (var inlineStream = File.Create(inlineAttachment))
-                                {
-                                    MessagePart rfc822 = (MessagePart)attachment;
-                                    rfc822.Message.WriteTo(inlineStream);
-                                }
-                            }
+                            //if (attachment is MessagePart)
+                            //{
+                            //    string inlineAttachment = Path.Combine(Constant.InlineAttachmentsDirectory, fileName);
+                            //    using (var inlineStream = File.Create(inlineAttachment))
+                            //    {
+                            //        MessagePart rfc822 = (MessagePart)attachment;
+                            //        rfc822.Message.WriteTo(inlineStream);
+                            //    }
+                            //}
                             
                             if (File.Exists(regularAttachment))
                             {

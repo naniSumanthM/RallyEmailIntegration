@@ -96,3 +96,8 @@ C:\Users\maddirsh\Documents\GitHub\IntegrationService\Email\bin\Debug\MailKit.xm
 C:\Users\maddirsh\Documents\GitHub\IntegrationService\Email\bin\Debug\Microsoft.VisualStudio.QualityTools.UnitTestFramework.xml
 C:\Users\maddirsh\Documents\GitHub\IntegrationService\Email\bin\Debug\MimeKit.xml
 C:\Users\maddirsh\Documents\GitHub\IntegrationService\Email\obj\Debug\Email.csprojResolveAssemblyReference.cache
+C:\Users\suman\Documents\GitHub\IntegrationService\Email\bin\Debug\BouncyCastle.Crypto.dll
+C:\Users\suman\Documents\GitHub\IntegrationService\Email\bin\Debug\MailKit.dll
+C:\Users\suman\Documents\GitHub\IntegrationService\Email\bin\Debug\MimeKit.dll
+C:\Users\suman\Documents\GitHub\IntegrationService\Email\bin\Debug\MailKit.xml
+C:\Users\suman\Documents\GitHub\IntegrationService\Email\bin\Debug\MimeKit.xml
