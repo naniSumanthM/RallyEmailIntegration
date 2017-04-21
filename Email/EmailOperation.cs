@@ -2,7 +2,6 @@
 using ActiveUp.Net.Mail;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net;
 using MailKit;
 using MailKit.Net.Imap;
@@ -463,8 +462,6 @@ namespace Email
         }
 
         #endregion
-
-        //MimeKit API
 
         #region download EML Files locally
 
