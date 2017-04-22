@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using MailKit;
+﻿using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
 using MailKit.Security;
@@ -1168,7 +1167,6 @@ namespace Rally
             string emailSubject;
             string emailBody;
             string userStoryReference;
-            int unnamed = 0;
             int anotherOne = 0;
             string base64String;
             string attachmentFileName;

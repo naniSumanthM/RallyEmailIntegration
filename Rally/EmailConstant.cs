@@ -19,6 +19,6 @@
         public const string GoogleUsername = "rallyintegration@gmail.com";
         public const string GenericPassword = "iYmcmb24";
         public const string GoogleOAuth = "XOAUTH2";
-
+        public const string GmailInbox = "Inbox";
     }
 }

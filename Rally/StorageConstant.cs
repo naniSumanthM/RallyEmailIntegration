@@ -5,7 +5,7 @@ namespace Rally
     class StorageConstant
     {
         /// <summary>
-        /// SyncConstant.cs stores local location of attachment storage. This must be changed according to Enviornment
+        /// SyncConstant.cs stores local location of attachment storage. Paths must be changed according to Enviornment
         /// </summary>
 
         public const string AttachmentsDirectory = "C:\\Users\\maddirsh\\Desktop\\AllAttachments\\regularAttachments\\";
