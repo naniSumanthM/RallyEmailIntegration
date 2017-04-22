@@ -1,4 +1,5 @@
-﻿using MailKit;
+﻿using System.Linq;
+using MailKit;
 using MailKit.Net.Imap;
 using MailKit.Search;
 using MailKit.Security;
@@ -25,25 +26,27 @@ namespace Rally
         private RallyRestApi _rallyRestApi;
         private ImapClient _imapClient;
         private SlackClient _slackClient;
-        private DynamicJsonObject toCreate = new DynamicJsonObject();
-        private DynamicJsonObject attachmentContent = new DynamicJsonObject();
-        private DynamicJsonObject attachmentContainer = new DynamicJsonObject();
-        private CreateResult createUserStory;
-        private CreateResult attachmentContentCreateResult;
-        private CreateResult attachmentContainerCreateResult;
-        private string userStoryReference;
-        private string emailSubject;
-        private string emailBody;
-        private Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
-        private string[] allAttachments;
-        private string base64String;
-        private string attachmentFileName;
-        private string attachmentFileNameForDictionary;
-        private int duplicateFileCount = 0;
-        private IMailFolder inboxFolder;
-        private IList<UniqueId> emailMessageIds;
-        private MimeMessage message;
-
+        private IMailFolder _inboxFolder;
+        private IList<UniqueId> _emailMessageIds;
+        private MimeMessage _message;
+        private DynamicJsonObject _toCreate = new DynamicJsonObject();
+        private DynamicJsonObject _attachmentContent = new DynamicJsonObject();
+        private DynamicJsonObject _attachmentContainer = new DynamicJsonObject();
+        private CreateResult _createUserStory;
+        private CreateResult _attachmentContentCreateResult;
+        private CreateResult _attachmentContainerCreateResult;
+        private Dictionary<string, string> _attachmentsDictionary;
+        private string _userStoryReference;
+        private string _emailSubject;
+        private string _emailBody;
+        private string[] _allAttachments;
+        private string _base64String;
+        private string _attachmentFileName;
+        private string _attachmentFileNameForDictionary;
+        private string _objectId;
+        private string _userStoryUrl;
+        private string _slackAttachmentString;
+        private int _duplicateFileCount = 0;
         public string RallyUserName { get; set; }
         public string RallyPassword { get; set; }
         public string GmailUserName { get; set; }
@@ -69,7 +72,7 @@ namespace Rally
             }
         }
 
-        private static void LoginToGmail(ImapClient client)
+        private void LoginToGmail(ImapClient client)
         {
             client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
             client.Connect(EmailConstant.GoogleHost, EmailConstant.ImapPort, SecureSocketOptions.SslOnConnect);
@@ -80,20 +83,26 @@ namespace Rally
         private void SetUpMailbox(ImapClient client)
         {
             client.Inbox.Open(FolderAccess.ReadWrite);
-            inboxFolder = client.GetFolder(EmailConstant.GmailInbox);
-            emailMessageIds = client.Inbox.Search(SearchQuery.All);
+            _inboxFolder = client.GetFolder(EmailConstant.GmailInbox);
+            _emailMessageIds = client.Inbox.Search(SearchQuery.All);
         }
 
-        private void CreateUserStoryWithEmail()
+        private void CreateUserStoryWithEmail(UniqueId messageId)
         {
-            if (emailSubject.IsEmpty())
+            _message = _inboxFolder.GetMessage(messageId);
+            _emailSubject = _message.Subject;
+            _emailBody = _message.TextBody;
+
+            if (_emailSubject.IsEmpty())
             {
-                emailSubject = EmailConstant.NoSubject;
+                _emailSubject = EmailConstant.NoSubject;
             }
-            toCreate[RallyConstant.Name] = (emailSubject);
-            toCreate[RallyConstant.Description] = (emailBody);
-            createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
-            Console.WriteLine("Created User Story: " + emailSubject);
+
+            _toCreate[RallyConstant.Name] = (_emailSubject);
+            _toCreate[RallyConstant.Description] = (_emailBody);
+            _createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, _toCreate);
+
+            Console.WriteLine("Created User Story: " + _emailSubject);
         }
 
         private static string FileToBase64(string attachment)
@@ -105,45 +114,57 @@ namespace Rally
 
         private void DownloadAttachments(MimeMessage message)
         {
-            foreach (MimeEntity attachment in message.BodyParts)
+            if (message == null) throw new ArgumentNullException(nameof(message));
+
+            if (message.Attachments.Count() > 0)
             {
-                string attachmentFile = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
-                string attachmentFilePath = String.Concat(StorageConstant.MimeKitAttachmentsDirectory,
-                    Path.GetFileName(attachmentFile));
-
-                if (!string.IsNullOrWhiteSpace(attachmentFile))
+                foreach (MimeEntity attachment in message.BodyParts)
                 {
-                    if (File.Exists(attachmentFilePath))
-                    {
-                        string extension = Path.GetExtension(attachmentFilePath);
-                        string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachmentFilePath);
-                        attachmentFile = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++duplicateFileCount, extension);
-                        attachmentFilePath = Path.Combine(StorageConstant.MimeKitAttachmentsDirectory, attachmentFile);
-                    }
+                    string attachmentFile = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
+                    string attachmentFilePath = String.Concat(StorageConstant.MimeKitAttachmentsDirectory,
+                        Path.GetFileName(attachmentFile));
 
-                    using (var attachmentStream = File.Create(attachmentFilePath))
+                    if (!string.IsNullOrWhiteSpace(attachmentFile))
                     {
-                        MimeKit.MimePart part = (MimeKit.MimePart)attachment;
-                        part.ContentObject.DecodeTo(attachmentStream);
-                    }
+                        if (File.Exists(attachmentFilePath))
+                        {
+                            string extension = Path.GetExtension(attachmentFilePath);
+                            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachmentFilePath);
+                            attachmentFile = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++_duplicateFileCount, extension);
+                            attachmentFilePath = Path.Combine(StorageConstant.MimeKitAttachmentsDirectory, attachmentFile);
+                        }
 
-                    Console.WriteLine("Downloaded: " + attachmentFile);
+                        using (var attachmentStream = File.Create(attachmentFilePath))
+                        {
+                            MimeKit.MimePart part = (MimeKit.MimePart)attachment;
+                            part.ContentObject.DecodeTo(attachmentStream);
+                        }
+
+                        Console.WriteLine("Downloaded: " + attachmentFile);
+                    }
                 }
+                _duplicateFileCount = 0;
+            }
+            else
+            {
+                Console.WriteLine("No Attachments for: "+ message.Subject);
             }
         }
 
         private void ProcessAttachments()
         {
-            allAttachments = Directory.GetFiles(StorageConstant.MimeKitAttachmentsDirectory);
-            foreach (string file in allAttachments)
-            {
-                base64String = FileToBase64(file);
-                attachmentFileName = Path.GetFileName(file);
-                attachmentFileNameForDictionary = string.Empty;
+            _attachmentsDictionary = new Dictionary<string, string>();
+            _allAttachments = Directory.GetFiles(StorageConstant.MimeKitAttachmentsDirectory);
 
-                if (!(attachmentsDictionary.TryGetValue(base64String, out attachmentFileNameForDictionary)))
+            foreach (string file in _allAttachments)
+            {
+                _base64String = FileToBase64(file);
+                _attachmentFileName = Path.GetFileName(file);
+                _attachmentFileNameForDictionary = string.Empty;
+
+                if (!_attachmentsDictionary.TryGetValue(_base64String, out _attachmentFileNameForDictionary))
                 {
-                    attachmentsDictionary.Add(base64String, attachmentFileName);
+                    _attachmentsDictionary.Add(_base64String, _attachmentFileName);
                     Console.WriteLine("Accepted: " + file);
                 }
                 else
@@ -151,26 +172,26 @@ namespace Rally
                     Console.WriteLine("Omitting Duplicate: " + file);
                 }
 
-                //instead of deleting the files, maybe just invoke a method to erase all the content in the directory
                 File.Delete(file);
             }
+            _attachmentsDictionary.Clear();
         }
 
         private void UploadAttachmentsToRallyUserStory()
         {
-            foreach (KeyValuePair<string, string> attachmentPair in attachmentsDictionary)
+            foreach (KeyValuePair<string, string> attachmentPair in _attachmentsDictionary)
             {
                 try
                 {
-                    attachmentContent[RallyConstant.Content] = attachmentPair.Key;
-                    attachmentContentCreateResult = _rallyRestApi.Create(RallyConstant.AttachmentContent, attachmentContent);
-                    userStoryReference = attachmentContentCreateResult.Reference;
-                    attachmentContainer[RallyConstant.Artifact] = createUserStory.Reference;
-                    attachmentContainer[RallyConstant.Content] = userStoryReference;
-                    attachmentContainer[RallyConstant.Name] = attachmentPair.Value;
-                    attachmentContainer[RallyConstant.Description] = RallyConstant.EmailAttachment;
-                    attachmentContainer[RallyConstant.ContentType] = StorageConstant.FileType;
-                    attachmentContainerCreateResult = _rallyRestApi.Create(RallyConstant.Attachment, attachmentContainer);
+                    _attachmentContent[RallyConstant.Content] = attachmentPair.Key;
+                    _attachmentContentCreateResult = _rallyRestApi.Create(RallyConstant.AttachmentContent, _attachmentContent);
+                    _userStoryReference = _attachmentContentCreateResult.Reference;
+                    _attachmentContainer[RallyConstant.Artifact] = _createUserStory.Reference;
+                    _attachmentContainer[RallyConstant.Content] = _userStoryReference;
+                    _attachmentContainer[RallyConstant.Name] = attachmentPair.Value;
+                    _attachmentContainer[RallyConstant.Description] = RallyConstant.EmailAttachment;
+                    _attachmentContainer[RallyConstant.ContentType] = StorageConstant.FileType;
+                    _attachmentContainerCreateResult = _rallyRestApi.Create(RallyConstant.Attachment, _attachmentContainer);
                 }
                 catch (WebException)
                 {
@@ -179,33 +200,71 @@ namespace Rally
             }
         }
 
+        private void PostSlackUserStoryNotification()
+        {
+            _objectId = Ref.GetOidFromRef(_createUserStory.Reference);
+            _userStoryUrl = String.Concat(RallyConstant.UserStoryUrlFormat, _objectId);
+            _slackAttachmentString = String.Format("User Story: <{0} | {1} >", _userStoryUrl, _message.Subject);
+
+            SlackMessage message = new SlackMessage
+            {
+                Channel = RallyConstant.SlackChannel,
+                Text = RallyConstant.SlackNotificationText,
+                Username = RallyConstant.SlackUser
+            };
+
+            var slackAttachment = new SlackAttachment
+            {
+                Fallback = _slackAttachmentString,
+                Text = _slackAttachmentString,
+                Color = RallyConstant.HexColor
+            };
+
+            message.Attachments = new List<SlackAttachment> { slackAttachment };
+            _slackClient.Post(message);
+        }
+
         public void SyncUsingMimeKit(string rallyWorkspace, string rallyScrumTeam)
         {
-            LoginToRally();
-
-            toCreate[RallyConstant.WorkSpace] = rallyWorkspace;
-            toCreate[RallyConstant.Project] = rallyScrumTeam;
-
-            using (ImapClient client = new ImapClient())
+            try
             {
-                LoginToGmail(client);
-                SetUpMailbox(client);
+                LoginToRally();
 
-                foreach (UniqueId messageId in emailMessageIds)
+                _toCreate[RallyConstant.WorkSpace] = rallyWorkspace;
+                _toCreate[RallyConstant.Project] = rallyScrumTeam;
+
+                using (_imapClient)
                 {
-                    message = inboxFolder.GetMessage(messageId);
-                    emailSubject = message.Subject;
-                    emailBody = message.TextBody;
+                    LoginToGmail(_imapClient);
+                    SetUpMailbox(_imapClient);
 
-                    CreateUserStoryWithEmail();
-                    DownloadAttachments(message);
-                    ProcessAttachments();
-                    UploadAttachmentsToRallyUserStory();
-                    attachmentsDictionary.Clear();
-                    duplicateFileCount = 0;
-                } 
+                    foreach (UniqueId messageId in _emailMessageIds)
+                    {
+                        CreateUserStoryWithEmail(messageId);
+                        DownloadAttachments(_message);
+                        ProcessAttachments();
+                        UploadAttachmentsToRallyUserStory();
+                        PostSlackUserStoryNotification();
+                    }
+                }
+            }
+            catch (IOException io)
+            {
+                Console.WriteLine(io.Message);
+            }
+            catch (WebException we)
+            {
+                Console.WriteLine(we.Message);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            finally
+            {
+                _rallyRestApi.Logout();
+                //_imapClient.Disconnect(true);
             }
         }
-   
     }
 }

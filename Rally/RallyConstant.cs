@@ -43,5 +43,7 @@ namespace Rally
         public const string SlackNotificationText = "*Rally Notification*";
         public const string SlackChannel = "#general";
         public const string SlackUser = "sumanth";
+        public const string RallyUserName = "maddirsh@mail.uc.edu";
+        public const string RallyPassword = "iYmcmb24";
     }
 }
