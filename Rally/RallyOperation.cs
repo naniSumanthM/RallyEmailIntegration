@@ -1151,6 +1151,7 @@ namespace Rally
         }
         #endregion
 
+        #region SyncUsingMimeKit
         public void SyncUsingMimeKit(string workspace, string project)
         {
             DynamicJsonObject toCreate = new DynamicJsonObject();
@@ -1277,5 +1278,6 @@ namespace Rally
             }
         }
 
+        #endregion
     }
 }

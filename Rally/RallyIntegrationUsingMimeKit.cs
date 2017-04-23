@@ -100,6 +100,7 @@ namespace Rally
 
             _toCreate[RallyConstant.Name] = (_emailSubject);
             _toCreate[RallyConstant.Description] = (_emailBody);
+            _toCreate[RallyConstant.PortfolioItem] = RallyQueryConstant.FeatureShareProject;
             _createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, _toCreate);
 
             Console.WriteLine("Created User Story: " + _emailSubject);
@@ -116,7 +117,7 @@ namespace Rally
         {
             if (message == null) throw new ArgumentNullException(nameof(message));
 
-            if (message.Attachments.Count() > 0)
+            if (message.BodyParts.Count() > 0)
             {
                 foreach (MimeEntity attachment in message.BodyParts)
                 {
@@ -130,8 +131,10 @@ namespace Rally
                         {
                             string extension = Path.GetExtension(attachmentFilePath);
                             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachmentFilePath);
-                            attachmentFile = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++_duplicateFileCount, extension);
-                            attachmentFilePath = Path.Combine(StorageConstant.MimeKitAttachmentsDirectory, attachmentFile);
+                            attachmentFile = string.Format(fileNameWithoutExtension + "-{0}" + "{1}",
+                                ++_duplicateFileCount, extension);
+                            attachmentFilePath = Path.Combine(StorageConstant.MimeKitAttachmentsDirectory,
+                                attachmentFile);
                         }
 
                         using (var attachmentStream = File.Create(attachmentFilePath))
@@ -147,7 +150,7 @@ namespace Rally
             }
             else
             {
-                Console.WriteLine("No Attachments for: "+ message.Subject);
+                Console.WriteLine("Omitting Duplicate: " + message.Subject);
             }
         }
 
@@ -174,7 +177,6 @@ namespace Rally
 
                 File.Delete(file);
             }
-            _attachmentsDictionary.Clear();
         }
 
         private void UploadAttachmentsToRallyUserStory()
@@ -198,6 +200,7 @@ namespace Rally
                     throw new WebException();
                 }
             }
+            _attachmentsDictionary.Clear();
         }
 
         private void PostSlackUserStoryNotification()
@@ -263,7 +266,6 @@ namespace Rally
             finally
             {
                 _rallyRestApi.Logout();
-                //_imapClient.Disconnect(true);
             }
         }
     }
