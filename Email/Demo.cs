@@ -7,7 +7,7 @@ namespace Email
         public static void Main(string[] args)
         {
             EmailOperation operation = new EmailOperation();
-            operation.DownloadAttachmentsFileIoWay();
+            operation.moveInboxMessages();
 
             Console.ReadLine();
         }

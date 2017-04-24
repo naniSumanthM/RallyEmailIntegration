@@ -392,7 +392,7 @@ namespace Rally
                 imap.Login(EmailConstant.OutlookUsername, EmailConstant.GenericPassword);
 
                 //setup Imap enviornment
-                Mailbox inbox = imap.SelectMailbox(EmailConstant.InboxFolder);
+                Mailbox inbox = imap.SelectMailbox(EmailConstant.OutlookInboxFolder);
                 int[] unread = inbox.Search(EmailConstant.UnseenMessages);
                 Console.WriteLine("Unread Messages: " + unread.Length);
 
@@ -417,7 +417,7 @@ namespace Rally
                     //Maybe mark them as unread, if a developer wants to still examine an email for further clarity
                     foreach (var item in unread)
                     {
-                        inbox.MoveMessage(item, EmailConstant.ProcessedFolder);
+                        inbox.MoveMessage(item, EmailConstant.OutloookProcessedFolder);
                     }
                 }
                 else
@@ -461,7 +461,7 @@ namespace Rally
                 imap.Login(EmailConstant.OutlookUsername, EmailConstant.GenericPassword);
 
                 //setup Imap enviornment
-                Mailbox inbox = imap.SelectMailbox(EmailConstant.InboxFolder);
+                Mailbox inbox = imap.SelectMailbox(EmailConstant.OutlookInboxFolder);
                 int[] unread = inbox.Search(EmailConstant.UnseenMessages);
                 Console.WriteLine("Unread Messages: " + unread.Length);
                 FlagCollection markAsUnreadFlag = new FlagCollection();
@@ -488,7 +488,7 @@ namespace Rally
                     {
                         markAsUnreadFlag.Add("Seen");
                         inbox.RemoveFlags(item, markAsUnreadFlag); //removing the seen flag on the email object
-                        inbox.MoveMessage(item, EmailConstant.ProcessedFolder);
+                        inbox.MoveMessage(item, EmailConstant.OutloookProcessedFolder);
                     }
                     //TODO: Safer to write another loop and iterate over the procesed folder, but that will crawl
                     //the entire inbox and mark the already read items as unread.
@@ -918,7 +918,7 @@ namespace Rally
             this.EnsureOutlookIsAuthenticated();
             this.EnsureRallyIsAuthenticated();
 
-            var inbox = _imap.SelectMailbox(EmailConstant.InboxFolder);
+            var inbox = _imap.SelectMailbox(EmailConstant.OutlookInboxFolder);
             var unread = inbox.Search(EmailConstant.UnseenMessages);
             Console.WriteLine("Unread Messages: " + unread.Length);
 
@@ -1034,7 +1034,7 @@ namespace Rally
                 EnsureOutlookIsAuthenticated();
 
                 //Setup Imap enviornment
-                Mailbox inbox = _imap.SelectMailbox(EmailConstant.InboxFolder);
+                Mailbox inbox = _imap.SelectMailbox(EmailConstant.OutlookInboxFolder);
                 int[] unread = inbox.Search(EmailConstant.UnseenMessages);
                 FlagCollection markAsUnreadFlag = new FlagCollection();
 
@@ -1121,7 +1121,7 @@ namespace Rally
                     {
                         markAsUnreadFlag.Add(EmailConstant.SeenMessages);
                         inbox.RemoveFlags(item, markAsUnreadFlag);
-                        inbox.MoveMessage(item, EmailConstant.ProcessedFolder);
+                        inbox.MoveMessage(item, EmailConstant.OutloookProcessedFolder);
                     }
 
                     Console.WriteLine("Created " + unread.Length + " User Stories");

@@ -197,7 +197,7 @@
         {
             foreach (var item in unread)
             {
-                inbox.MoveMessage(item, EmailConstant.ProcessedFolder);
+                inbox.MoveMessage(item, EmailConstant.OutloookProcessedFolder);
             }
         }
 
@@ -308,7 +308,7 @@
                 LoginToGmail();
                 LoginToRally();
 
-                _inbox = _imap4Client.SelectMailbox(EmailConstant.InboxFolder);
+                _inbox = _imap4Client.SelectMailbox(EmailConstant.OutlookInboxFolder);
                 _unreadMsg = _inbox.Search(EmailConstant.UnseenMessages);
                 _markAsUnreadFlag = new FlagCollection();
 

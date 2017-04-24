@@ -27,7 +27,8 @@ namespace Rally
         private ImapClient _imapClient;
         private SlackClient _slackClient;
         private IMailFolder _inboxFolder;
-        private IList<UniqueId> _emailMessageIds;
+        private IMailFolder _processedFolder;
+        private IList<UniqueId> _emailMessageIdsList;
         private MimeMessage _message;
         private DynamicJsonObject _toCreate = new DynamicJsonObject();
         private DynamicJsonObject _attachmentContent = new DynamicJsonObject();
@@ -47,6 +48,7 @@ namespace Rally
         private string _userStoryUrl;
         private string _slackAttachmentString;
         private int _duplicateFileCount = 0;
+        private int _unreadMessages = 0;
         public string RallyUserName { get; set; }
         public string RallyPassword { get; set; }
         public string GmailUserName { get; set; }
@@ -84,7 +86,8 @@ namespace Rally
         {
             client.Inbox.Open(FolderAccess.ReadWrite);
             _inboxFolder = client.GetFolder(EmailConstant.GmailInbox);
-            _emailMessageIds = client.Inbox.Search(SearchQuery.All);
+            _emailMessageIdsList = client.Inbox.Search(SearchQuery.NotSeen);
+            _unreadMessages = _emailMessageIdsList.Count;
         }
 
         private void CreateUserStoryWithEmail(UniqueId messageId)
@@ -106,7 +109,7 @@ namespace Rally
             Console.WriteLine("Created User Story: " + _emailSubject);
         }
 
-        private static string FileToBase64(string attachment)
+        private string FileToBase64(string attachment)
         {
             Byte[] attachmentBytes = File.ReadAllBytes(attachment);
             string base64EncodedString = Convert.ToBase64String(attachmentBytes);
@@ -115,8 +118,6 @@ namespace Rally
 
         private void DownloadAttachments(MimeMessage message)
         {
-            if (message == null) throw new ArgumentNullException(nameof(message));
-
             if (message.BodyParts.Count() > 0)
             {
                 foreach (MimeEntity attachment in message.BodyParts)
@@ -147,10 +148,6 @@ namespace Rally
                     }
                 }
                 _duplicateFileCount = 0;
-            }
-            else
-            {
-                Console.WriteLine("Omitting Duplicate: " + message.Subject);
             }
         }
 
@@ -227,6 +224,12 @@ namespace Rally
             _slackClient.Post(message);
         }
 
+        private void MoveMessagesToProcessedFolder(UniqueId messageId)
+        {
+            _processedFolder = _imapClient.GetFolder(EmailConstant.GmailProcessedFolder);
+            _imapClient.Inbox.MoveTo(messageId, _processedFolder);
+        }
+
         public void SyncUsingMimeKit(string rallyWorkspace, string rallyScrumTeam)
         {
             try
@@ -241,14 +244,28 @@ namespace Rally
                     LoginToGmail(_imapClient);
                     SetUpMailbox(_imapClient);
 
-                    foreach (UniqueId messageId in _emailMessageIds)
+                    if (_unreadMessages > 0)
                     {
-                        CreateUserStoryWithEmail(messageId);
-                        DownloadAttachments(_message);
-                        ProcessAttachments();
-                        UploadAttachmentsToRallyUserStory();
-                        PostSlackUserStoryNotification();
+                        Console.WriteLine("Syncing-" + _emailMessageIdsList.Count + " Messages");
+
+                        foreach (UniqueId messageId in _emailMessageIdsList)
+                        {
+                            CreateUserStoryWithEmail(messageId);
+                            DownloadAttachments(_message);
+                            ProcessAttachments();
+                            UploadAttachmentsToRallyUserStory();
+                            PostSlackUserStoryNotification();
+                            MoveMessagesToProcessedFolder(messageId);
+                        }
+
+                        Console.WriteLine("Synced-" + _emailMessageIdsList.Count + " Messages");
                     }
+                    else
+                    {
+                        Console.WriteLine("No Unread Messages Found");
+                    }
+
+                    _imapClient.Disconnect(true);
                 }
             }
             catch (IOException io)
@@ -268,5 +285,10 @@ namespace Rally
                 _rallyRestApi.Logout();
             }
         }
+
+        //query only for unread messages in the inbox, and then mark as read
+        //leave them unread, and move the messages to processed
+        //mark as read, and move them to processed
+        //check for security, nulls, and post slack etc...
     }
 }

@@ -541,29 +541,16 @@ namespace Email
             {
                 client.Connect(Constant.GoogleImapHost, Constant.ImapPort, SecureSocketOptions.SslOnConnect);
                 client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
-                Console.WriteLine(client.IsConnected);
 
-                if (client.IsConnected == true)
-                {
-                    FolderAccess inboxAccess = client.Inbox.Open(FolderAccess.ReadWrite);
-                    IMailFolder destination = client.GetFolder(Constant.ProcessedFolder);
-                    IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
 
-                    if (destination != null && uids.Count > 0)
-                    {
-                        client.Inbox.MoveTo(uids, destination);
-                        Console.WriteLine("Moved Messages");
-                    }
-                    else
-                    {
-                        //create the folder 
-                        //move message
-                        throw new Exception();
-                    }
-                }
-                else
+                FolderAccess inboxAccess = client.Inbox.Open(FolderAccess.ReadWrite);
+                IMailFolder destination = client.GetFolder(Constant.ProcessedFolder);
+                IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
+
+                if (destination != null && uids.Count > 0)
                 {
-                    throw new Exception();
+                    client.Inbox.MoveTo(uids, destination);
+                    Console.WriteLine("Moved Messages");
                 }
 
                 client.Disconnect(true);
@@ -581,23 +568,21 @@ namespace Email
                 client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
                 Console.WriteLine(client.IsAuthenticated);
 
-                if (client.IsConnected == true)
+
+                FolderAccess inboxAccess = client.Inbox.Open(FolderAccess.ReadWrite);
+                IMailFolder destination = client.GetFolder(Constant.InboxFolder);
+                IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
+
+                if (destination != null)
                 {
-                    FolderAccess inboxAccess = client.Inbox.Open(FolderAccess.ReadWrite);
-                    IMailFolder destination = client.GetFolder(Constant.InboxFolder);
-                    IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
-
-                    if (destination != null)
+                    for (int i = 0; i < uids.Count; i++)
                     {
-                        for (int i = 0; i < uids.Count; i++)
-                        {
-                            destination.SetFlags(i, MessageFlags.Seen, true);
-                        }
-
-                        Console.WriteLine("Done");
+                        destination.SetFlags(i, MessageFlags.Seen, true);
                     }
-                }
 
+                    Console.WriteLine(uids.Count + "-Marked as Read");
+                }
+                client.Disconnect(true);
             }
         }
 
@@ -748,7 +733,7 @@ namespace Email
                             //        rfc822.Message.WriteTo(inlineStream);
                             //    }
                             //}
-                            
+
                             if (File.Exists(regularAttachment))
                             {
                                 string extension = Path.GetExtension(regularAttachment);
@@ -768,7 +753,7 @@ namespace Email
                     }
                 }
             }
-        } 
+        }
         #endregion
     }
 }

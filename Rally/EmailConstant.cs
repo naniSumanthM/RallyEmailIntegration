@@ -9,10 +9,11 @@
         public const int ImapPort = 993;
         public const string OutlookHost = "imap-mail.outlook.com";
         public const string GoogleHost = "imap.gmail.com";
-        public const string InboxFolder = "INBOX";
+        public const string OutlookInboxFolder = "INBOX";
         public const string UnseenMessages = "UNSEEN";
         public const string SeenMessages = "SEEN";
-        public const string ProcessedFolder = "PROCESSED";
+        public const string OutloookProcessedFolder = "PROCESSED";
+        public const string GmailProcessedFolder = "Processed";
         public const string NoSubject = "No Subject";
         public const string NoBody = "No Body";
         public const string OutlookUsername = "sumanthmaddirala@outlook.com";
