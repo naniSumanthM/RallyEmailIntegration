@@ -4,6 +4,7 @@ using MailKit.Net.Imap;
 using MailKit.Search;
 using MailKit.Security;
 using MimeKit;
+using Rally.RestApi.Exceptions;
 using ServiceStack;
 using Slack.Webhooks;
 
@@ -35,7 +36,6 @@ namespace Rally
         private DynamicJsonObject _attachmentContainer = new DynamicJsonObject();
         private CreateResult _createUserStory;
         private CreateResult _attachmentContentCreateResult;
-        private CreateResult _attachmentContainerCreateResult;
         private Dictionary<string, string> _attachmentsDictionary;
         private string _userStoryReference;
         private string _emailSubject;
@@ -54,6 +54,14 @@ namespace Rally
         public string GmailUserName { get; set; }
         public string GmailPassword { get; set; }
 
+        /// <summary>
+        /// Constructor initializes instances for Rally, Gmail, and Slack.
+        /// Sets values to authenticate with Rally and Gmail
+        /// </summary>
+        /// <param name="rallyUserName"></param>
+        /// <param name="rallyPassword"></param>
+        /// <param name="gmailUserName"></param>
+        /// <param name="gmailPassword"></param>
         public RallyIntegrationUsingMimeKit(string rallyUserName, string rallyPassword, string gmailUserName, string gmailPassword)
         {
             _rallyRestApi = new RallyRestApi();
@@ -65,6 +73,9 @@ namespace Rally
             this.RallyPassword = rallyPassword;
         }
 
+        /// <summary>
+        /// Authenticate with Rally server if not authenticated
+        /// </summary>
         private void LoginToRally()
         {
             if (this._rallyRestApi.AuthenticationState != RallyRestApi.AuthenticationResult.Authenticated)
@@ -74,14 +85,25 @@ namespace Rally
             }
         }
 
+        /// <summary>
+        /// Authenticate with Gmail if not authenticated
+        /// </summary>
+        /// <param name="client"></param>
         private void LoginToGmail(ImapClient client)
         {
-            client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
-            client.Connect(EmailConstant.GoogleHost, EmailConstant.ImapPort, SecureSocketOptions.SslOnConnect);
-            client.AuthenticationMechanisms.Remove(EmailConstant.GoogleOAuth);
-            client.Authenticate(EmailConstant.GoogleUsername, EmailConstant.GenericPassword);
+            if (!this._imapClient.IsAuthenticated)
+            {
+                client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
+                client.Connect(EmailConstant.GoogleHost, EmailConstant.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.AuthenticationMechanisms.Remove(EmailConstant.GoogleOAuth);
+                client.Authenticate(EmailConstant.GoogleUsername, EmailConstant.GenericPassword);
+            }
         }
 
+        /// <summary>
+        /// When passed an ImapClient object, gets a refrence to the "Inbox" folder along with the count of unread messages
+        /// </summary>
+        /// <param name="client"></param>
         private void SetUpMailbox(ImapClient client)
         {
             client.Inbox.Open(FolderAccess.ReadWrite);
@@ -90,6 +112,10 @@ namespace Rally
             _unreadMessages = _emailMessageIdsList.Count;
         }
 
+        /// <summary>
+        /// When passed an id of email message, method will create the user story with subject as user story title, and body as the description
+        /// </summary>
+        /// <param name="messageId"></param>
         private void CreateUserStoryWithEmail(UniqueId messageId)
         {
             _message = _inboxFolder.GetMessage(messageId);
@@ -109,13 +135,22 @@ namespace Rally
             Console.WriteLine("Created User Story: " + _emailSubject);
         }
 
+        /// <summary>
+        /// When passed the file path of an attachment, method will convert the file to a base 64 string
+        /// </summary>
+        /// <param name="attachment"></param>
+        /// <returns></returns>
         private string FileToBase64(string attachment)
         {
             Byte[] attachmentBytes = File.ReadAllBytes(attachment);
-            string base64EncodedString = Convert.ToBase64String(attachmentBytes);
-            return base64EncodedString;
+            string convertToBase64 = Convert.ToBase64String(attachmentBytes);
+            return convertToBase64;
         }
 
+        /// <summary>
+        /// Download all attachments (regular and embedded) to a local directory
+        /// </summary>
+        /// <param name="message"></param>
         private void DownloadAttachments(MimeMessage message)
         {
             if (message.BodyParts.Count() > 0)
@@ -123,6 +158,7 @@ namespace Rally
                 foreach (MimeEntity attachment in message.BodyParts)
                 {
                     string attachmentFile = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
+                    //attachments path needs to be changed
                     string attachmentFilePath = String.Concat(StorageConstant.MimeKitAttachmentsDirectory,
                         Path.GetFileName(attachmentFile));
 
@@ -151,6 +187,9 @@ namespace Rally
             }
         }
 
+        /// <summary>
+        /// Converts each file into base 64, and add the key-value pair of the 64BitString, fileName to the Dictionary.
+        /// </summary>
         private void ProcessAttachments()
         {
             _attachmentsDictionary = new Dictionary<string, string>();
@@ -176,6 +215,9 @@ namespace Rally
             }
         }
 
+        /// <summary>
+        /// With a populated Dictionary, method will iterate over the collection and upload each attachment to the respective user story
+        /// </summary>
         private void UploadAttachmentsToRallyUserStory()
         {
             foreach (KeyValuePair<string, string> attachmentPair in _attachmentsDictionary)
@@ -190,9 +232,9 @@ namespace Rally
                     _attachmentContainer[RallyConstant.Name] = attachmentPair.Value;
                     _attachmentContainer[RallyConstant.Description] = RallyConstant.EmailAttachment;
                     _attachmentContainer[RallyConstant.ContentType] = StorageConstant.FileType;
-                    _attachmentContainerCreateResult = _rallyRestApi.Create(RallyConstant.Attachment, _attachmentContainer);
+                    _rallyRestApi.Create(RallyConstant.Attachment, _attachmentContainer);
                 }
-                catch (WebException)
+                catch (RallyUnavailableException)
                 {
                     throw new WebException();
                 }
@@ -200,6 +242,9 @@ namespace Rally
             _attachmentsDictionary.Clear();
         }
 
+        /// <summary>
+        /// Post userstory notification to Slack upon successful creation of user story
+        /// </summary>
         private void PostSlackUserStoryNotification()
         {
             _objectId = Ref.GetOidFromRef(_createUserStory.Reference);
@@ -213,7 +258,7 @@ namespace Rally
                 Username = RallyConstant.SlackUser
             };
 
-            var slackAttachment = new SlackAttachment
+            SlackAttachment slackAttachment = new SlackAttachment
             {
                 Fallback = _slackAttachmentString,
                 Text = _slackAttachmentString,
@@ -224,12 +269,22 @@ namespace Rally
             _slackClient.Post(message);
         }
 
+        /// <summary>
+        /// Moves the collection of unread messages that have been uploaded to Rally to "Processed" folder.
+        /// This helps identify processed messages in the email server
+        /// </summary>
+        /// <param name="messageId"></param>
         private void MoveMessagesToProcessedFolder(UniqueId messageId)
         {
             _processedFolder = _imapClient.GetFolder(EmailConstant.GmailProcessedFolder);
             _imapClient.Inbox.MoveTo(messageId, _processedFolder);
         }
 
+        /// <summary>
+        /// Parses emails with attachments to create user stories in Rally if there are unread email messages in the "Inbox" folder
+        /// </summary>
+        /// <param name="rallyWorkspace"></param>
+        /// <param name="rallyScrumTeam"></param>
         public void SyncUsingMimeKit(string rallyWorkspace, string rallyScrumTeam)
         {
             try
@@ -272,9 +327,17 @@ namespace Rally
             {
                 Console.WriteLine(io.Message);
             }
-            catch (WebException we)
+            catch (ImapProtocolException imapProtocolException)
             {
-                Console.WriteLine(we.Message);
+                Console.WriteLine(imapProtocolException.Message);    
+            }
+            catch (RallyUnavailableException rallyUnavailableException)
+            {
+                Console.WriteLine(rallyUnavailableException.Message);
+            }
+            catch(WebException webException)
+            {
+                Console.WriteLine(webException.Message);
             }
             catch (Exception e)
             {
@@ -285,10 +348,5 @@ namespace Rally
                 _rallyRestApi.Logout();
             }
         }
-
-        //query only for unread messages in the inbox, and then mark as read
-        //leave them unread, and move the messages to processed
-        //mark as read, and move them to processed
-        //check for security, nulls, and post slack etc...
     }
 }

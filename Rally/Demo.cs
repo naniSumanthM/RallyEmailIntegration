@@ -10,7 +10,8 @@ namespace Rally
             //rallyIntegration.SyncUserStories(RallyQueryConstant.WorkspaceZScratch, RallyQueryConstant.ScrumTeamSampleProject);
 
             RallyIntegrationUsingMimeKit r = new RallyIntegrationUsingMimeKit(RallyConstant.RallyUserName, RallyConstant.RallyPassword, EmailConstant.GoogleUsername, EmailConstant.GenericPassword);
-            r.SyncUsingMimeKit(RallyQueryConstant.WorkspaceZScratch, RallyQueryConstant.ScrumTeamSampleProject);
+            //r.SyncUsingMimeKit(RallyQueryConstant.WorkspaceZScratch, RallyQueryConstant.ScrumTeamSampleProject);
+
 
             Console.ReadLine();
         }
