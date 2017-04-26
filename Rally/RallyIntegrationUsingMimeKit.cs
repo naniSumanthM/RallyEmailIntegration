@@ -149,6 +149,7 @@ namespace Rally
 
         /// <summary>
         /// Download all attachments (regular and embedded) to a local directory
+        /// 
         /// </summary>
         /// <param name="message"></param>
         private void DownloadAttachments(MimeMessage message)
@@ -158,8 +159,7 @@ namespace Rally
                 foreach (MimeEntity attachment in message.BodyParts)
                 {
                     string attachmentFile = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
-                    //attachments path needs to be changed
-                    string attachmentFilePath = String.Concat(StorageConstant.MimeKitAttachmentsDirectory,
+                    string attachmentFilePath = String.Concat(StorageConstant.MimeKitAttachmentsDirectoryWork,
                         Path.GetFileName(attachmentFile));
 
                     if (!string.IsNullOrWhiteSpace(attachmentFile))
@@ -170,11 +170,11 @@ namespace Rally
                             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachmentFilePath);
                             attachmentFile = string.Format(fileNameWithoutExtension + "-{0}" + "{1}",
                                 ++_duplicateFileCount, extension);
-                            attachmentFilePath = Path.Combine(StorageConstant.MimeKitAttachmentsDirectory,
+                            attachmentFilePath = Path.Combine(StorageConstant.MimeKitAttachmentsDirectoryWork,
                                 attachmentFile);
                         }
 
-                        using (var attachmentStream = File.Create(attachmentFilePath))
+                        using (FileStream attachmentStream = File.Create(attachmentFilePath))
                         {
                             MimeKit.MimePart part = (MimeKit.MimePart)attachment;
                             part.ContentObject.DecodeTo(attachmentStream);
@@ -189,11 +189,12 @@ namespace Rally
 
         /// <summary>
         /// Converts each file into base 64, and add the key-value pair of the 64BitString, fileName to the Dictionary.
+        /// Need to change attachments directory accroding to enviornment
         /// </summary>
         private void ProcessAttachments()
         {
             _attachmentsDictionary = new Dictionary<string, string>();
-            _allAttachments = Directory.GetFiles(StorageConstant.MimeKitAttachmentsDirectory);
+            _allAttachments = Directory.GetFiles(StorageConstant.MimeKitAttachmentsDirectoryWork);
 
             foreach (string file in _allAttachments)
             {

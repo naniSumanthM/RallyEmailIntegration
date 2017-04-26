@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Rally
+﻿namespace Rally
 {
     class StorageConstant
     {
@@ -10,7 +8,7 @@ namespace Rally
 
         public const string AttachmentsDirectory = "C:\\Users\\maddirsh\\Desktop\\AllAttachments\\regularAttachments\\";
         public const string InlineImageDirectory = "C:\\Users\\maddirsh\\Desktop\\AllAttachments\\inlineAttachments";
-        //public const string MimeKitAttachmentsDirectory = "C:\\Users\\maddirsh\\Desktop\\MimeKit";
+        public const string MimeKitAttachmentsDirectoryWork = "C:\\Users\\maddirsh\\Desktop\\MimeKit\\";
         public const string MimeKitAttachmentsDirectory = "C:\\Users\\suman\\Desktop\\EmailData\\";
         public const string FileType = "file/";
     }
