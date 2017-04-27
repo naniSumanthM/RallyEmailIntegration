@@ -17,10 +17,10 @@
         public const string InboxFolder = "INBOX";
         public const string UnseenMessages = "UNSEEN";
         public const string All = "ALL";
-        //public const string RegularAttachmentsDirectory = "C:\\Users\\maddirsh\\Desktop\\AllAttachments\\regularAttachments";
         public const string InlineAttachmentsDirectory = "C:\\Users\\maddirsh\\Desktop\\AllAttachments\\inlineAttachments";
-        public const string RegularAttachmentsDirectory = "C:\\Users\\suman\\Desktop\\EmailData\\";
-        public const string tempPath = "C:\\Users\\maddirsh\\Desktop";
+        public const string HpRegularAttachmentsDirectory = "C:\\Users\\suman\\Desktop\\EmailData\\";
+        public const string MimeKitAttachmentsDirectoryWork = "C:\\Users\\maddirsh\\Desktop\\MimeKit\\";
+        public const string TempPath = "C:\\Users\\maddirsh\\Desktop";
         public const string EnrollmentStudentServicesFolder = "EnrollmentStudentServicesA&FBursarPropel";
     }
 }

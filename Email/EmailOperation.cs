@@ -389,7 +389,7 @@ namespace Email
                     {
                         if (attachemntMsg.Attachments.Count > 0)
                         {
-                            attachemntMsg.Attachments.StoreToFolder(Constant.RegularAttachmentsDirectory);
+                            attachemntMsg.Attachments.StoreToFolder(Constant.HpRegularAttachmentsDirectory);
                         }
                         else
                         {
@@ -671,7 +671,7 @@ namespace Email
                         //Only download files that have names
                         if (!string.IsNullOrWhiteSpace(fileName))
                         {
-                            string path = Path.Combine(Constant.tempPath, fileName);
+                            string path = Path.Combine(Constant.TempPath, fileName);
 
                             using (var stream = File.Create(path))
                             {
@@ -720,7 +720,7 @@ namespace Email
                     foreach (MimeEntity attachment in message.BodyParts)
                     {
                         string fileName = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
-                        string regularAttachment = string.Concat(Constant.RegularAttachmentsDirectory, fileName);
+                        string regularAttachment = string.Concat(Constant.HpRegularAttachmentsDirectory, fileName);
 
                         if (!string.IsNullOrWhiteSpace(fileName))
                         {
@@ -741,7 +741,7 @@ namespace Email
                                 string extension = Path.GetExtension(regularAttachment);
                                 string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(regularAttachment);
                                 fileName = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++anotherOne, extension);
-                                regularAttachment = Path.Combine(Constant.RegularAttachmentsDirectory, fileName);
+                                regularAttachment = Path.Combine(Constant.HpRegularAttachmentsDirectory, fileName);
                             }
 
                             using (var attachmentStream = File.Create(regularAttachment))
@@ -758,8 +758,11 @@ namespace Email
         }
         #endregion
 
+        #region: majorChange
         public void IterateThroughEmail()
         {
+            int anotherOne = 0;
+
             using (var client = new ImapClient())
             {
                 //authenticate
@@ -783,16 +786,43 @@ namespace Email
                     foreach (var x in uids)
                     {
                         //in folder A
-                        var message = folder.GetMessage(x);
+                        MimeMessage message = folder.GetMessage(x);
                         string subject = message.Subject;
                         string body = message.TextBody;
                         Console.WriteLine(subject + "\n" + body);
+
+                        foreach (MimeEntity attachment in message.BodyParts)
+                        {
+                            string fileName = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
+                            string anAttachment = string.Concat(Constant.MimeKitAttachmentsDirectoryWork, fileName);
+
+                            if (!string.IsNullOrWhiteSpace(fileName))
+                            {
+                                if (File.Exists(anAttachment))
+                                {
+                                    string extension = Path.GetExtension(anAttachment);
+                                    string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(anAttachment);
+                                    fileName = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++anotherOne, extension);
+                                    anAttachment = string.Concat(Constant.MimeKitAttachmentsDirectoryWork, fileName);
+                                }
+
+                                using (FileStream attachmentStream = File.Create(anAttachment))
+                                {
+                                    MimeKit.MimePart part = (MimeKit.MimePart)attachment;
+                                    part.ContentObject.DecodeTo(attachmentStream);
+                                }
+
+                                Console.WriteLine("Downloaded: " + fileName);
+                            }
+                        }
+                        #region Sketch
                         //create user story
                         //download all the attachments
                         //process attachments
                         //upload to Rally
                         //send slack notification
-                        //send email notification 
+                        //send email notification  
+                        #endregion
                     }
                 }
                 client.Disconnect(true);
@@ -800,6 +830,7 @@ namespace Email
         }
 
 
+        #endregion
     }
 }
 

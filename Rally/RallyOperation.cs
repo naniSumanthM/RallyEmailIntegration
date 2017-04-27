@@ -1279,5 +1279,111 @@ namespace Rally
         }
 
         #endregion
+
+        public void SyncThroughMultipleLabels()
+        {
+            DynamicJsonObject toCreate = new DynamicJsonObject();
+            toCreate[RallyConstant.WorkSpace] = RallyQueryConstant.WorkspaceUcit;
+            DynamicJsonObject attachmentContent = new DynamicJsonObject();
+            DynamicJsonObject attachmentContainer = new DynamicJsonObject();
+            CreateResult createUserStory;
+            CreateResult attachmentContentCreateResult;
+            CreateResult attachmentContainerCreateResult;
+            int anotherOne = 0;
+
+            EnsureRallyIsAuthenticated();
+
+            using (var client = new ImapClient())
+            {
+                //authenticate
+                client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
+                client.Connect(EmailConstant.GoogleHost, EmailConstant.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.AuthenticationMechanisms.Remove(EmailConstant.GoogleOAuth);
+                client.Authenticate(EmailConstant.GoogleUsername, EmailConstant.GenericPassword);
+
+                client.Inbox.Open(FolderAccess.ReadWrite);
+                
+                IMailFolder personal = client.GetFolder(EmailConstant.EnrollmentStudentServicesFolder);
+                foreach (IMailFolder folder in personal.GetSubfolders())
+                {
+                    string folderName = folder.Name;
+                    Console.WriteLine(folderName);
+
+                    //give each folder read and write access
+                    folder.Open(FolderAccess.ReadWrite);
+                    //uids in the specific folder
+                    IList<UniqueId> uids = folder.Search(SearchQuery.All);
+                    foreach (var x in uids)
+                    {
+                        //in folder A
+                        MimeMessage message = folder.GetMessage(x);
+                        string subject = message.Subject;
+                        string body = message.TextBody;
+                        Console.WriteLine(subject + "\n" + body);
+
+                        //Set up the Project enviornment
+                        if (folderName.Equals(RallyQueryConstant.GmailFolderCatalyst2016))
+                        {
+                            toCreate[RallyConstant.Project] = RallyQueryConstant.GmailFolderCatalyst2016;
+                        }
+                        else if (folderName.Equals(RallyQueryConstant.GmailFolderHonorsEnhancements))
+                        {
+                            toCreate[RallyConstant.Project] = RallyQueryConstant.GmailFolderHonorsEnhancements;
+                        }
+                        else if (folderName.Equals(RallyQueryConstant.GmailFolderPalHelp))
+                        {
+                            toCreate[RallyConstant.Project] = RallyQueryConstant.GmailFolderPalHelp;
+                        }
+                        else
+                        {
+                            toCreate[RallyConstant.Project] = RallyQueryConstant.GmailFolderPciAzureTouchNetImplementation;
+                        }
+
+                        //create the user story with the subject and body
+                        toCreate[RallyConstant.Name] = (subject);
+                        toCreate[RallyConstant.Description] = (body);
+                        _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
+                        Console.WriteLine("Created User Story: "+ subject);
+
+                        #region EmailAttachments
+                        //foreach (MimeEntity attachment in message.BodyParts)
+                        //{
+                        //    string fileName = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
+                        //    string anAttachment = string.Concat(StorageConstant.MimeKitAttachmentsDirectoryWork, fileName);
+
+                        //    if (!string.IsNullOrWhiteSpace(fileName))
+                        //    {
+                        //        if (File.Exists(anAttachment))
+                        //        {
+                        //            string extension = Path.GetExtension(anAttachment);
+                        //            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(anAttachment);
+                        //            fileName = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++anotherOne, extension);
+                        //            anAttachment = string.Concat(StorageConstant.MimeKitAttachmentsDirectoryWork, fileName);
+                        //        }
+
+                        //        using (FileStream attachmentStream = File.Create(anAttachment))
+                        //        {
+                        //            MimeKit.MimePart part = (MimeKit.MimePart)attachment;
+                        //            part.ContentObject.DecodeTo(attachmentStream);
+                        //        }
+
+                        //        Console.WriteLine("Downloaded: " + fileName);
+                        //    }
+                        //} 
+                        #endregion
+                        #region Sketch
+                        //create user story
+                        //download all the attachments
+                        //process attachments
+                        //upload to Rally
+                        //send slack notification
+                        //send email notification  
+                        #endregion
+                    }
+                }
+                client.Disconnect(true);
+                Console.WriteLine("Done");
+            }
+        }
     }
 }

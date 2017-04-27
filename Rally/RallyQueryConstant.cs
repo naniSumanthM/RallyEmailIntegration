@@ -26,7 +26,6 @@ namespace Rally
 
         //Scrum Teams and Workspaces
         public const string WorkspaceZScratch = "/workspace/36903994748";
-        public const string WorkspaceUcit = "/workspace/33809253647";
         public const string ScrumTeamLotteryWinners = "/project/57640961096";
         public const string ScrumTeamSampleProject = "/project/36903994832";
         public const string ScrumTeamLabRatsFy17 = "/project/38079273075";
@@ -35,5 +34,16 @@ namespace Rally
         public const string SampleUserStory = "/hierarchicalrequirement/70836533324";
         public const string FeatureOarMaintenance = "portfolioitem/feature/92925227200";
         public const string FeatureShareProject = "portfolioitem/feature/49487570246";
+
+        //new things
+        public const string WorkspaceUcit = "/workspace/33809253647";
+        public const string ProjectPalHelp = "/project/41784645913";
+        public const string ProjectCatalyst2016 = "/project/50891335993";
+        public const string ProjectHonorsEnhancements = "/project/88093125592";
+        public const string ProjectPciAzureTouchNetImplementation = "/project/103987654888";
+        public const string GmailFolderCatalyst2016 = "Catalyst2016";
+        public const string GmailFolderHonorsEnhancements = "HonorsEnhancements";
+        public const string GmailFolderPalHelp = "PALHELP";
+        public const string GmailFolderPciAzureTouchNetImplementation = "PCIAzureTouchNetImplementation";
     }
 }

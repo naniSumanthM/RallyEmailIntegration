@@ -21,5 +21,7 @@
         public const string GenericPassword = "iYmcmb24";
         public const string GoogleOAuth = "XOAUTH2";
         public const string GmailInbox = "Inbox";
+        public const string EnrollmentStudentServicesFolder = "EnrollmentStudentServicesA&FBursarPropel";
+
     }
 }

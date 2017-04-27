@@ -12,8 +12,12 @@ namespace Rally
 
             #endregion
 
-            RallyIntegrationUsingMimeKit r = new RallyIntegrationUsingMimeKit(RallyConstant.RallyUserName, RallyConstant.RallyPassword, EmailConstant.GoogleUsername, EmailConstant.GenericPassword);
-            r.SyncUsingMimeKit(RallyQueryConstant.WorkspaceZScratch, RallyQueryConstant.ScrumTeamSampleProject);
+            //RallyIntegrationUsingMimeKit r = new RallyIntegrationUsingMimeKit(RallyConstant.RallyUserName, RallyConstant.RallyPassword, EmailConstant.GoogleUsername, EmailConstant.GenericPassword);
+            //r.SyncUsingMimeKit(RallyQueryConstant.WorkspaceZScratch, RallyQueryConstant.ScrumTeamSampleProject);
+
+            
+            RallyOperation ro = new RallyOperation(RallyConstant.RallyUserName, RallyConstant.RallyPassword);
+            ro.SyncThroughMultipleLabels();
 
             Console.ReadLine();
         }
