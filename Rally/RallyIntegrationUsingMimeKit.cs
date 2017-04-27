@@ -193,7 +193,7 @@ namespace Rally
         /// </summary>
         private void ProcessAttachments()
         {
-            _attachmentsDictionary = new Dictionary<string, string>();
+            _attachmentsDictionary = new Dictionary<string, string>(25);
             _allAttachments = Directory.GetFiles(StorageConstant.MimeKitAttachmentsDirectoryWork);
 
             foreach (string file in _allAttachments)
@@ -339,10 +339,6 @@ namespace Rally
             catch(WebException webException)
             {
                 Console.WriteLine(webException.Message);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
             }
             finally
             {

@@ -104,7 +104,7 @@ namespace Rally
                 foreach (var workspace in workSpaceQuery.Results)
                 {
                     Request projectRequest = new Request(workspace[RallyQueryConstant.Projects]);
-                    projectRequest.Fetch = new List<String>() { RallyConstant.Name };
+                    projectRequest.Fetch = new List<String> { RallyConstant.Name };
 
                     //Query for the projects
                     QueryResult projectQuery = _rallyRestApi.Query(projectRequest);

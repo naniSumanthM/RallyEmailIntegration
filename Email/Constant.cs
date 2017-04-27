@@ -21,6 +21,6 @@
         public const string InlineAttachmentsDirectory = "C:\\Users\\maddirsh\\Desktop\\AllAttachments\\inlineAttachments";
         public const string RegularAttachmentsDirectory = "C:\\Users\\suman\\Desktop\\EmailData\\";
         public const string tempPath = "C:\\Users\\maddirsh\\Desktop";
-
+        public const string EnrollmentStudentServicesFolder = "EnrollmentStudentServicesA&FBursarPropel";
     }
 }

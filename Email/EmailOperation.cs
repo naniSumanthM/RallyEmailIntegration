@@ -724,6 +724,7 @@ namespace Email
 
                         if (!string.IsNullOrWhiteSpace(fileName))
                         {
+                            #region MessagePart
                             //if (attachment is MessagePart)
                             //{
                             //    string inlineAttachment = Path.Combine(Constant.InlineAttachmentsDirectory, fileName);
@@ -732,7 +733,8 @@ namespace Email
                             //        MessagePart rfc822 = (MessagePart)attachment;
                             //        rfc822.Message.WriteTo(inlineStream);
                             //    }
-                            //}
+                            //} 
+                            #endregion
 
                             if (File.Exists(regularAttachment))
                             {
@@ -755,6 +757,49 @@ namespace Email
             }
         }
         #endregion
+
+        public void IterateThroughEmail()
+        {
+            using (var client = new ImapClient())
+            {
+                //authenticate
+                client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
+                client.Connect(Constant.GoogleImapHost, Constant.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.AuthenticationMechanisms.Remove(Constant.GoogleOAuth);
+                client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
+
+                client.Inbox.Open(FolderAccess.ReadWrite);
+
+                //IMailFolder personal = client.GetFolder(client.PersonalNamespaces[0]);
+
+                IMailFolder personal = client.GetFolder(Constant.EnrollmentStudentServicesFolder);
+                foreach (IMailFolder folder in personal.GetSubfolders())
+                {
+                    Console.WriteLine(folder.Name);
+                    //give each folder read and write access
+                    folder.Open(FolderAccess.ReadWrite);
+                    //uids in the specific folder
+                    IList<UniqueId> uids = folder.Search(SearchQuery.All);
+                    foreach (var x in uids)
+                    {
+                        //in folder A
+                        var message = folder.GetMessage(x);
+                        string subject = message.Subject;
+                        string body = message.TextBody;
+                        Console.WriteLine(subject + "\n" + body);
+                        //create user story
+                        //download all the attachments
+                        //process attachments
+                        //upload to Rally
+                        //send slack notification
+                        //send email notification 
+                    }
+                }
+                client.Disconnect(true);
+            }
+        }
+
+
     }
 }
 
