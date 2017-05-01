@@ -21,8 +21,6 @@ C:\Users\maddirsh\Desktop\IntegrationService\SlackWebhooks\obj\Debug\SlackWebhoo
 C:\Users\maddirsh\Desktop\IntegrationService\SlackWebhooks\obj\Debug\SlackWebhooks.exe
 C:\Users\maddirsh\Desktop\IntegrationService\SlackWebhooks\obj\Debug\SlackWebhooks.pdb
 C:\Users\maddirsh\Documents\GitHub\IntegrationService\SlackWebhooks\bin\Debug\SlackWebhooks.exe.config
-C:\Users\maddirsh\Documents\GitHub\IntegrationService\SlackWebhooks\obj\Debug\SlackWebhooks.exe
-C:\Users\maddirsh\Documents\GitHub\IntegrationService\SlackWebhooks\obj\Debug\SlackWebhooks.pdb
 C:\Users\maddirsh\Documents\GitHub\IntegrationService\SlackWebhooks\bin\Debug\SlackWebhooks.exe
 C:\Users\maddirsh\Documents\GitHub\IntegrationService\SlackWebhooks\bin\Debug\SlackWebhooks.pdb
 C:\Users\maddirsh\Documents\GitHub\IntegrationService\SlackWebhooks\bin\Debug\RestSharp.dll
@@ -31,3 +29,5 @@ C:\Users\maddirsh\Documents\GitHub\IntegrationService\SlackWebhooks\bin\Debug\Sl
 C:\Users\maddirsh\Documents\GitHub\IntegrationService\SlackWebhooks\bin\Debug\RestSharp.xml
 C:\Users\maddirsh\Documents\GitHub\IntegrationService\SlackWebhooks\bin\Debug\ServiceStack.Text.xml
 C:\Users\maddirsh\Documents\GitHub\IntegrationService\SlackWebhooks\obj\Debug\SlackWebhooks.csprojResolveAssemblyReference.cache
+C:\Users\maddirsh\Documents\GitHub\IntegrationService\SlackWebhooks\obj\Debug\SlackWebhooks.exe
+C:\Users\maddirsh\Documents\GitHub\IntegrationService\SlackWebhooks\obj\Debug\SlackWebhooks.pdb

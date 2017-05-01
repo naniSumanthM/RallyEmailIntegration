@@ -8,8 +8,10 @@ using MailKit.Net.Imap;
 using MailKit.Search;
 using MailKit.Security;
 using MimeKit;
+using MailKit.Net.Smtp;
 using Header = ActiveUp.Net.Mail.Header;
 using MimePart = ActiveUp.Net.Mail.MimePart;
+using SmtpClient = MailKit.Net.Smtp.SmtpClient;
 
 namespace Email
 {
@@ -556,9 +558,11 @@ namespace Email
                 client.Disconnect(true);
             }
         }
+
         #endregion
 
         #region SetReadFlag
+
         public void addFlagRead()
         {
             using (var client = new ImapClient())
@@ -605,14 +609,16 @@ namespace Email
                 if (client.IsConnected == true)
                 {
                     FolderAccess inboxAccess = client.Inbox.Open(FolderAccess.ReadWrite);
-                    IList<IMessageSummary> items = client.Inbox.Fetch(0, -1, MessageSummaryItems.UniqueId | MessageSummaryItems.BodyStructure | MessageSummaryItems.Envelope);
+                    IList<IMessageSummary> items = client.Inbox.Fetch(0, -1,
+                        MessageSummaryItems.UniqueId | MessageSummaryItems.BodyStructure | MessageSummaryItems.Envelope);
                     int unnamed = 0;
 
                     foreach (var message in items)
                     {
                         foreach (var attachment in message.BodyParts)
                         {
-                            MimeKit.MimePart mime = (MimeKit.MimePart)client.Inbox.GetBodyPart(message.UniqueId, attachment);
+                            MimeKit.MimePart mime =
+                                (MimeKit.MimePart)client.Inbox.GetBodyPart(message.UniqueId, attachment);
                             string fileName = mime.FileName;
 
                             if (string.IsNullOrEmpty(fileName))
@@ -623,7 +629,9 @@ namespace Email
                             FormatOptions options = FormatOptions.Default.Clone();
                             options.ParameterEncodingMethod = ParameterEncodingMethod.Rfc2047;
 
-                            using (FileStream stream = File.Create(Path.Combine("C:\\Users\\maddirsh\\Desktop\\MimeKit\\", fileName)))
+                            using (
+                                FileStream stream =
+                                    File.Create(Path.Combine("C:\\Users\\maddirsh\\Desktop\\MimeKit\\", fileName)))
                             {
                                 mime.ContentObject.DecodeTo(stream);
                             }
@@ -642,6 +650,7 @@ namespace Email
         #endregion
 
         #region retreiveAttachmentsFromDownloaded
+
         /// <summary>
         /// This will overwrite the files for which, the server pulls the same names
         /// </summary
@@ -692,6 +701,7 @@ namespace Email
                 }
             }
         }
+
         #endregion
 
         #region DownloadAttachmentsFileIoWay
@@ -725,6 +735,7 @@ namespace Email
                         if (!string.IsNullOrWhiteSpace(fileName))
                         {
                             #region MessagePart
+
                             //if (attachment is MessagePart)
                             //{
                             //    string inlineAttachment = Path.Combine(Constant.InlineAttachmentsDirectory, fileName);
@@ -734,13 +745,15 @@ namespace Email
                             //        rfc822.Message.WriteTo(inlineStream);
                             //    }
                             //} 
+
                             #endregion
 
                             if (File.Exists(regularAttachment))
                             {
                                 string extension = Path.GetExtension(regularAttachment);
                                 string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(regularAttachment);
-                                fileName = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++anotherOne, extension);
+                                fileName = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++anotherOne,
+                                    extension);
                                 regularAttachment = Path.Combine(Constant.HpRegularAttachmentsDirectory, fileName);
                             }
 
@@ -756,9 +769,11 @@ namespace Email
                 }
             }
         }
+
         #endregion
 
-        #region: majorChange
+        #region IterateThroughEmail
+
         public void IterateThroughEmail()
         {
             int anotherOne = 0;
@@ -802,7 +817,8 @@ namespace Email
                                 {
                                     string extension = Path.GetExtension(anAttachment);
                                     string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(anAttachment);
-                                    fileName = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++anotherOne, extension);
+                                    fileName = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++anotherOne,
+                                        extension);
                                     anAttachment = string.Concat(Constant.MimeKitAttachmentsDirectoryWork, fileName);
                                 }
 
@@ -815,13 +831,16 @@ namespace Email
                                 Console.WriteLine("Downloaded: " + fileName);
                             }
                         }
+
                         #region Sketch
+
                         //create user story
                         //download all the attachments
                         //process attachments
                         //upload to Rally
                         //send slack notification
                         //send email notification  
+
                         #endregion
                     }
                 }
@@ -831,6 +850,74 @@ namespace Email
 
 
         #endregion
+
+        #region Send Email
+        public void SendEmail()
+        {
+            List<MailboxAddress> emailNoticationList = new List<MailboxAddress>();
+            emailNoticationList.Add(new MailboxAddress("sumanthmaddirala@outlook.com"));
+            emailNoticationList.Add(new MailboxAddress("sumanth083@gmail.com"));
+            emailNoticationList.Add(new MailboxAddress("maddirsh@mail.uc.edu"));
+
+            using (SmtpClient client = new MailKit.Net.Smtp.SmtpClient())
+            {
+                client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+                client.Connect("smtp.gmail.com", 465, true);
+                client.AuthenticationMechanisms.Remove(Constant.GoogleOAuth);
+                client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
+
+                foreach (var mailboxAddress in emailNoticationList)
+                {
+                    MimeMessage message = new MimeMessage();
+                    message.From.Add(new MailboxAddress("Rally Integration", Constant.GoogleUserName));
+                    message.To.Add(mailboxAddress);
+                    message.Subject = "SMTP: Test Email";
+                    message.Body = new TextPart("plain")
+                    {
+                        Text = "Hello Test Email"
+                    };
+
+                    client.Send(message);
+                }
+
+                client.Disconnect(true);
+                Console.WriteLine("Sent");
+            }
+        }
+        #endregion
+
+        #region ChildFolders
+        public void ChildFolders()
+        {
+            using (var client = new ImapClient())
+            {
+                //authenticate
+                client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
+                client.Connect(Constant.GoogleImapHost, Constant.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.AuthenticationMechanisms.Remove(Constant.GoogleOAuth);
+                client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
+
+                client.Inbox.Open(FolderAccess.ReadWrite);
+
+                IMailFolder personal = client.GetFolder("OfficeOfResearchLabRats");
+
+                foreach (IMailFolder folder in personal.GetSubfolders())
+                {
+                    Console.WriteLine(folder.Name);
+
+                    IEnumerable<IMailFolder> collection = folder.GetSubfolders();
+
+                    foreach (var n in collection)
+                    {
+                        Console.WriteLine(n.Name);
+                    }
+                }
+                client.Disconnect(true);
+            }
+        }
+
+        #endregion
+
     }
 }
 

@@ -123,11 +123,10 @@
     <Compile Include="Demo.cs" />
     <Compile Include="EmailConstant.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RallyIntegrationUsingMimeKit.cs" />
+    <Compile Include="RallyIntegration.cs" />
     <Compile Include="RallyQueryConstant.cs" />
     <Compile Include="RallyConstant.cs" />
     <Compile Include="RallyOperation.cs" />
-    <Compile Include="RallyIntegration.cs" />
     <Compile Include="StorageConstant.cs" />
   </ItemGroup>
   <ItemGroup>

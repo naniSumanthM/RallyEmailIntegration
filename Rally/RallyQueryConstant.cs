@@ -23,8 +23,6 @@ namespace Rally
         public const string TaskDescription = "Task Description: ";
         public const string WebExceptionMessage = "Web Exception Hit";
         public const string TaskMessage = "Tasks Not Found";
-
-        //Scrum Teams and Workspaces
         public const string WorkspaceZScratch = "/workspace/36903994748";
         public const string ScrumTeamLotteryWinners = "/project/57640961096";
         public const string ScrumTeamSampleProject = "/project/36903994832";
@@ -34,9 +32,8 @@ namespace Rally
         public const string SampleUserStory = "/hierarchicalrequirement/70836533324";
         public const string FeatureOarMaintenance = "portfolioitem/feature/92925227200";
         public const string FeatureShareProject = "portfolioitem/feature/49487570246";
-
-        //new things
         public const string WorkspaceUcit = "/workspace/33809253647";
+        public const string ProjectScrumptious = "/project/37953473084";
         public const string ProjectPalHelp = "/project/41784645913";
         public const string ProjectCatalyst2016 = "/project/50891335993";
         public const string ProjectHonorsEnhancements = "/project/88093125592";
@@ -44,6 +41,7 @@ namespace Rally
         public const string GmailFolderCatalyst2016 = "Catalyst2016";
         public const string GmailFolderHonorsEnhancements = "HonorsEnhancements";
         public const string GmailFolderPalHelp = "PALHELP";
+        public const string GmailFolderScrumptious = "Scrumptious";
         public const string GmailFolderPciAzureTouchNetImplementation = "PCIAzureTouchNetImplementation";
     }
 }

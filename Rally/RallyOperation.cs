@@ -4,6 +4,7 @@ using MailKit.Search;
 using MailKit.Security;
 using MimeKit;
 using ServiceStack;
+using Slack.Webhooks;
 
 namespace Rally
 {
@@ -1280,110 +1281,182 @@ namespace Rally
 
         #endregion
 
+        #region SyncThroughMultipleLabels
         public void SyncThroughMultipleLabels()
         {
+            SlackClient slackClient = new SlackClient(RallyConstant.SlackApiToken, 100);
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyConstant.WorkSpace] = RallyQueryConstant.WorkspaceUcit;
             DynamicJsonObject attachmentContent = new DynamicJsonObject();
             DynamicJsonObject attachmentContainer = new DynamicJsonObject();
             CreateResult createUserStory;
             CreateResult attachmentContentCreateResult;
-            CreateResult attachmentContainerCreateResult;
-            int anotherOne = 0;
+            toCreate[RallyConstant.WorkSpace] = RallyQueryConstant.WorkspaceUcit;
+            MimeMessage message;
 
+            Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
+            int anotherOne = 0;
+            string base64String;
+            string attachmentFileName;
+            string fileName;
+            string userStoryReference;
+            string objectId;
+            string userStoryUrl;
+            string slackAttachmentString;
+            
             EnsureRallyIsAuthenticated();
 
             using (var client = new ImapClient())
             {
-                //authenticate
+                #region Authentication
                 client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
                 client.Connect(EmailConstant.GoogleHost, EmailConstant.ImapPort, SecureSocketOptions.SslOnConnect);
                 client.AuthenticationMechanisms.Remove(EmailConstant.GoogleOAuth);
                 client.Authenticate(EmailConstant.GoogleUsername, EmailConstant.GenericPassword);
-
                 client.Inbox.Open(FolderAccess.ReadWrite);
-                
+
+                #endregion
+
                 IMailFolder personal = client.GetFolder(EmailConstant.EnrollmentStudentServicesFolder);
                 foreach (IMailFolder folder in personal.GetSubfolders())
                 {
                     string folderName = folder.Name;
                     Console.WriteLine(folderName);
 
-                    //give each folder read and write access
-                    folder.Open(FolderAccess.ReadWrite);
-                    //uids in the specific folder
-                    IList<UniqueId> uids = folder.Search(SearchQuery.All);
-                    foreach (var x in uids)
+                    #region Folders
+                    if (folderName.Equals(RallyQueryConstant.GmailFolderCatalyst2016))
                     {
-                        //in folder A
-                        MimeMessage message = folder.GetMessage(x);
+                        toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectCatalyst2016;
+                    }
+                    else if (folderName.Equals(RallyQueryConstant.GmailFolderHonorsEnhancements))
+                    {
+                        toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectHonorsEnhancements;
+                    }
+                    else if (folderName.Equals(RallyQueryConstant.GmailFolderPalHelp))
+                    {
+                        toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectPalHelp;
+                    }
+                    else if (folderName.Equals(RallyQueryConstant.GmailFolderScrumptious))
+                    {
+                        toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectScrumptious;
+                    }
+                    else
+                    {
+                        toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectPciAzureTouchNetImplementation;
+                    }
+                    #endregion
+
+                    folder.Open(FolderAccess.ReadWrite);
+                    IList<UniqueId> uids = folder.Search(SearchQuery.All);
+
+                    foreach (UniqueId msgId in uids)
+                    {
+                        #region Email Set up and create user story
+                        message = folder.GetMessage(msgId);
                         string subject = message.Subject;
                         string body = message.TextBody;
-                        Console.WriteLine(subject + "\n" + body);
 
-                        //Set up the Project enviornment
-                        if (folderName.Equals(RallyQueryConstant.GmailFolderCatalyst2016))
-                        {
-                            toCreate[RallyConstant.Project] = RallyQueryConstant.GmailFolderCatalyst2016;
-                        }
-                        else if (folderName.Equals(RallyQueryConstant.GmailFolderHonorsEnhancements))
-                        {
-                            toCreate[RallyConstant.Project] = RallyQueryConstant.GmailFolderHonorsEnhancements;
-                        }
-                        else if (folderName.Equals(RallyQueryConstant.GmailFolderPalHelp))
-                        {
-                            toCreate[RallyConstant.Project] = RallyQueryConstant.GmailFolderPalHelp;
-                        }
-                        else
-                        {
-                            toCreate[RallyConstant.Project] = RallyQueryConstant.GmailFolderPciAzureTouchNetImplementation;
-                        }
+                        toCreate[RallyConstant.Name] = subject;
+                        toCreate[RallyConstant.Description] = body;
+                        createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
 
-                        //create the user story with the subject and body
-                        toCreate[RallyConstant.Name] = (subject);
-                        toCreate[RallyConstant.Description] = (body);
-                        _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
-                        Console.WriteLine("Created User Story: "+ subject);
-
-                        #region EmailAttachments
-                        //foreach (MimeEntity attachment in message.BodyParts)
-                        //{
-                        //    string fileName = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
-                        //    string anAttachment = string.Concat(StorageConstant.MimeKitAttachmentsDirectoryWork, fileName);
-
-                        //    if (!string.IsNullOrWhiteSpace(fileName))
-                        //    {
-                        //        if (File.Exists(anAttachment))
-                        //        {
-                        //            string extension = Path.GetExtension(anAttachment);
-                        //            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(anAttachment);
-                        //            fileName = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++anotherOne, extension);
-                        //            anAttachment = string.Concat(StorageConstant.MimeKitAttachmentsDirectoryWork, fileName);
-                        //        }
-
-                        //        using (FileStream attachmentStream = File.Create(anAttachment))
-                        //        {
-                        //            MimeKit.MimePart part = (MimeKit.MimePart)attachment;
-                        //            part.ContentObject.DecodeTo(attachmentStream);
-                        //        }
-
-                        //        Console.WriteLine("Downloaded: " + fileName);
-                        //    }
-                        //} 
                         #endregion
-                        #region Sketch
-                        //create user story
-                        //download all the attachments
-                        //process attachments
-                        //upload to Rally
-                        //send slack notification
-                        //send email notification  
+
+                        #region DownloadEmailAttachments
+                        foreach (MimeEntity attachment in message.BodyParts)
+                        {
+                            string emailAttachmentFileName = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
+                            string anAttachment = string.Concat(StorageConstant.MimeKitAttachmentsDirectoryWork, emailAttachmentFileName);
+
+                            if (!string.IsNullOrWhiteSpace(emailAttachmentFileName))
+                            {
+                                if (File.Exists(anAttachment))
+                                {
+                                    string extension = Path.GetExtension(anAttachment);
+                                    string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(anAttachment);
+                                    emailAttachmentFileName = string.Format(fileNameWithoutExtension + "-{0}" + "{1}", ++anotherOne, extension);
+                                    anAttachment = string.Concat(StorageConstant.MimeKitAttachmentsDirectoryWork, emailAttachmentFileName);
+                                }
+
+                                using (FileStream attachmentStream = File.Create(anAttachment))
+                                {
+                                    MimeKit.MimePart part = (MimeKit.MimePart)attachment;
+                                    part.ContentObject.DecodeTo(attachmentStream);
+                                }
+
+                                Console.WriteLine("Downloaded: " + emailAttachmentFileName);
+                            }
+                        }
                         #endregion
+
+                        #region ProcessAttachments
+                        string[] allAttachments = Directory.GetFiles(StorageConstant.MimeKitAttachmentsDirectoryWork);
+                        foreach (string file in allAttachments)
+                        {
+                            base64String = fileToBase64(file);
+                            attachmentFileName = Path.GetFileName(file);
+                            fileName = string.Empty;
+
+                            if (!attachmentsDictionary.TryGetValue(base64String, out fileName))
+                            {
+                                Console.WriteLine("Accepted: " + file);
+                                attachmentsDictionary.Add(base64String, attachmentFileName);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Declined: " + file);
+                            }
+
+                            File.Delete(file);
+                        }
+                        #endregion
+
+                        #region UploadToRally
+                        foreach (KeyValuePair<string, string> attachmentPair in attachmentsDictionary)
+                        {
+                            attachmentContent[RallyConstant.Content] = attachmentPair.Key;
+                            attachmentContentCreateResult = _rallyRestApi.Create(RallyConstant.AttachmentContent, attachmentContent);
+                            userStoryReference = attachmentContentCreateResult.Reference;
+                            attachmentContainer[RallyConstant.Artifact] = createUserStory.Reference;
+                            attachmentContainer[RallyConstant.Content] = userStoryReference;
+                            attachmentContainer[RallyConstant.Name] = attachmentPair.Value;
+                            attachmentContainer[RallyConstant.Description] = RallyConstant.EmailAttachment;
+                            attachmentContainer[RallyConstant.ContentType] = StorageConstant.FileType;
+                            _rallyRestApi.Create(RallyConstant.Attachment, attachmentContainer);
+                        }
+                        attachmentsDictionary.Clear();
+                        #endregion
+
+                        #region Slack
+
+                        objectId = Ref.GetOidFromRef(createUserStory.Reference);
+                        userStoryUrl = String.Concat(RallyConstant.UserStoryUrlFormat, objectId);
+                        slackAttachmentString = String.Format("User Story: <{0} | {1} >", userStoryUrl, subject);
+
+                        SlackMessage slackMessage = new SlackMessage
+                        {
+                            Channel = RallyConstant.SlackChannel,
+                            Text = RallyConstant.SlackNotificationText,
+                            Username = RallyConstant.SlackUser
+                        };
+
+                        var slackAttachment = new SlackAttachment
+                        {
+                            Fallback = slackAttachmentString,
+                            Text = slackAttachmentString,
+                            Color = RallyConstant.HexColor
+                        };
+
+                        slackMessage.Attachments = new List<SlackAttachment> { slackAttachment };
+                        slackClient.Post(slackMessage);
+
+                        #endregion
+
                     }
                 }
                 client.Disconnect(true);
                 Console.WriteLine("Done");
             }
         }
+        #endregion
     }
 }
