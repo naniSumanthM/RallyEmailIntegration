@@ -1,16 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net;
-using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using ActiveUp.Net.Mail;
-using ActiveUp.Net.Security;
-using ActiveUp.Net.WhoIs;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Rally;
 using Rally.RestApi;
-using Rally.RestApi.Json;
-using Rally.RestApi.Response;
 using Slack.Webhooks;
 
 namespace IntegrationTesting

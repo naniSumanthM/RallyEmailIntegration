@@ -44,6 +44,6 @@ namespace Rally
         public const string GmailFolderPalHelp = "PALHELP";
         public const string GmailFolderScrumptious = "Scrumptious";
         public const string GmailFolderPciAzureTouchNetImplementation = "PCIAzureTouchNetImplementation";
-        public const string ProcessedA = "Processed-EnrollmentStudentServicesA&FBursarPropel";
+        public const string ProcessedEnrollmentStudentServices = "Processed-EnrollmentStudentServicesA&FBursarPropel";
     }
 }

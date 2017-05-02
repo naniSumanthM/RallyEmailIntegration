@@ -2,6 +2,7 @@
 using ActiveUp.Net.Mail;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using MailKit;
 using MailKit.Net.Imap;
@@ -899,7 +900,7 @@ namespace Email
 
                 client.Inbox.Open(FolderAccess.ReadWrite);
 
-                IMailFolder personal = client.GetFolder("OfficeOfResearchLabRats");
+                IMailFolder personal = client.GetFolder("EnrollmentStudentServicesA&FBursarPropel");
 
                 foreach (IMailFolder folder in personal.GetSubfolders())
                 {
@@ -912,6 +913,7 @@ namespace Email
                         Console.WriteLine(n.Name);
                     }
                 }
+
                 client.Disconnect(true);
             }
         }

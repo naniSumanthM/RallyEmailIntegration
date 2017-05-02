@@ -43,7 +43,6 @@ namespace SlackWebhooks
             //post to slack server
             client.Post(message);
 
-
             Console.ReadLine();
         }
     }

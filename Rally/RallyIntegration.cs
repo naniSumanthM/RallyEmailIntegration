@@ -18,7 +18,6 @@ namespace Rally
     using RestApi.Response;
     using System.Collections.Generic;
     using System.Net;
-    using ActiveUp.Net.Mail;
     using System.Drawing;
     #endregion
 
