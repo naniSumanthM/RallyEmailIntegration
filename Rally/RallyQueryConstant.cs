@@ -31,6 +31,7 @@ namespace Rally
         public const string Iteration = "iteration/70430073500";
         public const string SampleUserStory = "/hierarchicalrequirement/70836533324";
         public const string FeatureOarMaintenance = "portfolioitem/feature/92925227200";
+        public const string IgnoreIteration = "portfolioitem/feature/37200184092";
         public const string FeatureShareProject = "portfolioitem/feature/49487570246";
         public const string WorkspaceUcit = "/workspace/33809253647";
         public const string ProjectScrumptious = "/project/37953473084";
@@ -43,5 +44,6 @@ namespace Rally
         public const string GmailFolderPalHelp = "PALHELP";
         public const string GmailFolderScrumptious = "Scrumptious";
         public const string GmailFolderPciAzureTouchNetImplementation = "PCIAzureTouchNetImplementation";
+        public const string ProcessedA = "Processed-EnrollmentStudentServicesA&FBursarPropel";
     }
 }

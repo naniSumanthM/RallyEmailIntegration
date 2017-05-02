@@ -131,7 +131,6 @@ namespace Rally
             _toCreate[RallyConstant.Description] = (_emailBody);
             _toCreate[RallyConstant.PortfolioItem] = RallyQueryConstant.FeatureShareProject;
             _createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, _toCreate);
-
             Console.WriteLine("Created User Story: " + _emailSubject);
         }
 
