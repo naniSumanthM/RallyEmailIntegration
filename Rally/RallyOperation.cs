@@ -4,6 +4,7 @@ using MailKit.Net.Imap;
 using MailKit.Search;
 using MailKit.Security;
 using MimeKit;
+using MimeKit.Text;
 using ServiceStack;
 using Slack.Webhooks;
 using static System.String;
@@ -50,7 +51,7 @@ namespace Rally
         /// <summary>
         /// Returns all the existing workspaces in Rally
         /// </summary>
-        public void getWorkspaces()
+        public void GetWorkspaces()
         {
             //Authenticate
             this.EnsureRallyIsAuthenticated();
@@ -83,11 +84,10 @@ namespace Rally
         /// <summary>
         /// Retreives all the scrum teams within the Rally Enviornment
         /// </summary>
-        public void getScrumTeams()
+        public void GetScrumTeams()
         {
             this.EnsureRallyIsAuthenticated();
 
-            //DynamicJSonObject instantion
             DynamicJsonObject dObj = _rallyRestApi.GetSubscription(RallyQueryConstant.Workspaces);
 
             try
@@ -98,7 +98,7 @@ namespace Rally
                 foreach (var workspace in workSpaceQuery.Results)
                 {
                     Request projectRequest = new Request(workspace[RallyQueryConstant.Projects]);
-                    projectRequest.Fetch = new List<String> { RallyConstant.Name };
+                    projectRequest.Fetch = new List<string> { RallyConstant.Name };
 
                     //Query for the projects
                     QueryResult projectQuery = _rallyRestApi.Query(projectRequest);
@@ -126,7 +126,7 @@ namespace Rally
         /// <param name="workspaceRef"></param>
         /// <param name="projectRef"></param>
 
-        public void getUserStories(string workspaceRef, string projectRef)
+        public void GetUserStories(string workspaceRef, string projectRef)
         {
             //Authenticate
             this.EnsureRallyIsAuthenticated();
@@ -175,7 +175,7 @@ namespace Rally
         /// <param name="workspaceRef"></param>
         /// <param name="projectRef"></param>
 
-        public void getUSTA(string workspaceRef, string projectRef)
+        public void GetUserStoriesWithTasks(string workspaceRef, string projectRef)
         {
             //Authenticate
             this.EnsureRallyIsAuthenticated();
@@ -249,7 +249,7 @@ namespace Rally
         #endregion
 
         #region: Query Iterations
-        public void getIterations(string workspace, string project)
+        public void GetIterations(string workspace, string project)
         {
 
             this.EnsureRallyIsAuthenticated();
@@ -362,7 +362,7 @@ namespace Rally
         #endregion
 
         #region: fileToBase64
-        public static string fileToBase64(string attachment)
+        public static string FileToBase64(string attachment)
         {
             Byte[] attachmentBytes = File.ReadAllBytes(attachment);
             string base64EncodedString = Convert.ToBase64String(attachmentBytes);
@@ -389,7 +389,7 @@ namespace Rally
             string fullImageFile = imageFilePath + imageFileName;
 
             // Convert Image to Base64 format
-            string imageBase64String = fileToBase64(fullImageFile);
+            string imageBase64String = FileToBase64(fullImageFile);
 
             // Length calculated from Base64String converted back
             var imageNumberBytes = Convert.FromBase64String(imageBase64String).Length;
@@ -503,7 +503,7 @@ namespace Rally
                     allAttachments = Directory.GetFiles(StorageConstant.MimeKitAttachmentsDirectory);
                     foreach (string file in allAttachments)
                     {
-                        base64String = fileToBase64(file);
+                        base64String = FileToBase64(file);
                         attachmentFileName = Path.GetFileName(file);
                         fileName = Empty;
 
@@ -566,8 +566,8 @@ namespace Rally
             CreateResult attachmentContainerCreateResult;
             string[] allAttachments;
             Dictionary<string, string> attachmentsDictionary = new Dictionary<string, string>();
-            string emailSubject;
-            string emailBody;
+            string userStorySubject;
+            string userStoryDescription;
             string userStoryReference;
             string attachmentReference;
             int anotherOne = 0;
@@ -577,6 +577,7 @@ namespace Rally
             string _objectId;
             string _userStoryUrl;
             string _slackAttachmentString;
+            string slackChannel;
             #endregion
 
             EnsureRallyIsAuthenticated();
@@ -600,22 +601,27 @@ namespace Rally
                     if (childFolder.Name.Equals(RallyQueryConstant.GmailFolderCatalyst2016))
                     {
                         toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectCatalyst2016;
+                        slackChannel = SLACK.Channelcatalyst2016;
                     }
                     else if (childFolder.Name.Equals(RallyQueryConstant.GmailFolderHonorsEnhancements))
                     {
                         toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectHonorsEnhancements;
+                        slackChannel = SLACK.ChannelHonorsEnhancements;
                     }
                     else if (childFolder.Name.Equals(RallyQueryConstant.GmailFolderPalHelp))
                     {
                         toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectPalHelp;
+                        slackChannel = SLACK.ChannelPalHelp;
                     }
                     else if (childFolder.Name.Equals(RallyQueryConstant.GmailFolderPciAzureTouchNetImplementation))
                     {
                         toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectPciAzureTouchNetImplementation;
+                        slackChannel = SLACK.ChannelAzureTouchNet;
                     }
                     else
                     {
                         toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectScrumptious;
+                        slackChannel = SLACK.ChannelScrumptious;
                     }
                     #endregion
 
@@ -628,16 +634,20 @@ namespace Rally
                         foreach (UniqueId uid in childFolderMsgUniqueIds)
                         { 
                             MimeMessage message = childFolder.GetMessage(uid);
-                            emailSubject = message.Subject;
-                            emailBody = message.TextBody;
+                            userStorySubject = message.Subject;
+                            userStoryDescription =
+                                         "From: "+ message.From +
+                                "<br>" + "Date Sent: " + message.Date + "</br>" +
+                                "<br>" + "Subject: " + userStorySubject + "</br>" +
+                                "<br>" + "Request: " + message.GetTextBody(TextFormat.Plain) + "<br>";
 
-                            if (emailSubject.IsEmpty())
+                            if (userStorySubject.IsEmpty())
                             {
-                                emailSubject = "<No Subject User Story>";
+                                userStorySubject = "<No Subject User Story>";
                             }
 
-                            toCreate[RallyConstant.Name] = (emailSubject);
-                            toCreate[RallyConstant.Description] = (emailBody);
+                            toCreate[RallyConstant.Name] = userStorySubject;
+                            toCreate[RallyConstant.Description] = userStoryDescription;
                             createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
                             userStoryReference = createUserStory.Reference;
 
@@ -680,7 +690,7 @@ namespace Rally
                             allAttachments = Directory.GetFiles(StorageConstant.MimeKitAttachmentsDirectoryWork);
                             foreach (string file in allAttachments)
                             {
-                                base64String = fileToBase64(file);
+                                base64String = FileToBase64(file);
                                 attachmentFileName = Path.GetFileName(file);
                                 fileName = Empty;
 
@@ -733,23 +743,23 @@ namespace Rally
                             if (userStoryReference != null)
                             {
                                 _objectId = Ref.GetOidFromRef(userStoryReference);
-                                _userStoryUrl = String.Concat(RallyConstant.UserStoryUrlFormat, _objectId);
-                                _slackAttachmentString = String.Format("User Story: <{0} | {1} >", _userStoryUrl,
-                                    message.Subject);
-
+                                _userStoryUrl = string.Concat(SLACK.UserStoryUrlFormat, _objectId);
+                                _slackAttachmentString = string.Format("User Story: <{0} | {1} >", _userStoryUrl, message.Subject);
 
                                 SlackMessage slackMessage = new SlackMessage
                                 {
-                                    Channel = RallyConstant.SlackChannel,
-                                    Text = RallyConstant.SlackNotificationText,
-                                    Username = RallyConstant.SlackUser
+                                    //Channel is set according to the source of the email message folder
+                                    Channel = slackChannel,
+                                    Text = SLACK.SlackNotificationBanner,
+                                    IconEmoji = Emoji.SmallRedTriangle,
+                                    Username = SLACK.SlackUser
                                 };
 
                                 SlackAttachment slackAttachment = new SlackAttachment
                                 {
                                     Fallback = _slackAttachmentString,
                                     Text = _slackAttachmentString,
-                                    Color = RallyConstant.HexColor
+                                    Color = SLACK.HexColor
                                 };
 
                                 slackMessage.Attachments = new List<SlackAttachment> { slackAttachment };
@@ -778,10 +788,11 @@ namespace Rally
                     }
                 }
                 Console.WriteLine("Done");
+                client.Disconnect(true);
             }
         }
 
-        #endregion  
+        #endregion
 
     }
 }

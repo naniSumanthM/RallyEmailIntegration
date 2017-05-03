@@ -8,39 +8,30 @@ namespace SlackWebhooks
     {
         static void Main(string[] args)
         {
-            //Slackclient object
-            SlackClient client = new SlackClient(SlackConstant.webhookURL,100);
-
-            //Message object
+            SlackClient client = new SlackClient(SlackConstant.webhookURL);
             SlackMessage message = new SlackMessage
             {
-                Channel = "#general",
-                Text = "*Rally Notification*",
+                Channel = "#random",
+                Text = SlackConstant.title,
                 IconEmoji = Emoji.SmallRedTriangle,
-                Username = "sumanth"
+                Username = SlackConstant.username
             };
 
-            //attachment - https://api.slack.com/docs/message-attachments
-            //lets us create links, and add attachments
-            var slackAttachment = new SlackAttachment
+            SlackAttachment attachment = new SlackAttachment
             {
                 Fallback = "New open task [Urgent]: <http://url_to_task|Test out Slack message attachments>",
-                //_refUUID + _ref + _refObjectName
                 Text = "Userstory US667: <https://rally1.rallydev.com/#/36903994832ud/detail/userstory/96328719420 | User Story Title >",
                 Color = "#4ef442",
-                Fields =
-                new List<SlackField>
-                {
-                    new SlackField
+                Fields = new List<SlackField>
                         {
-                            Value = "User Story Description"
+                            new SlackField
+                                {
+                                    Value = "User Story Description"
+                                }
                         }
-                }
             };
 
-            //add attachmentList to message
-            message.Attachments = new List<SlackAttachment> { slackAttachment };
-            //post to slack server
+            message.Attachments = new List<SlackAttachment> { attachment };
             client.Post(message);
 
             Console.ReadLine();

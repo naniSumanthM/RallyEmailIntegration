@@ -6,9 +6,9 @@ namespace Rally
     {
         static void Main(string[] args)
         {
-            RallyOperation ro = new RallyOperation(RallyConstant.RallyUserName, RallyConstant.RallyPassword);
-            ro.SyncThroughLabels(RallyQueryConstant.WorkspaceUcit);
-
+            RallyOperation operation = new RallyOperation(RallyConstant.RallyUserName, RallyConstant.RallyPassword);
+            operation.SyncThroughLabels(RallyQueryConstant.WorkspaceUcit);
+            
             Console.ReadLine();
         }
     }

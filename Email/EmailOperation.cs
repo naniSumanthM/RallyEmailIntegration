@@ -10,6 +10,7 @@ using MailKit.Search;
 using MailKit.Security;
 using MimeKit;
 using MailKit.Net.Smtp;
+using MimeKit.Text;
 using Header = ActiveUp.Net.Mail.Header;
 using MimePart = ActiveUp.Net.Mail.MimePart;
 using SmtpClient = MailKit.Net.Smtp.SmtpClient;
@@ -499,34 +500,24 @@ namespace Email
         /// <summary>
         /// Looks like Microsoft keeps blocking me from the email server
         /// </summary>
-        public void getEmailSubjectBody()
+        public void GetEmailSubjectBody()
         {
             using (var client = new ImapClient())
             {
                 client.Connect(Constant.GoogleImapHost, Constant.ImapPort, SecureSocketOptions.SslOnConnect);
                 client.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
-                Console.WriteLine(client.IsAuthenticated);
 
-                if (client.IsConnected == true)
-                {
-                    FolderAccess inboxAccess = client.Inbox.Open(FolderAccess.ReadWrite);
-                    IMailFolder destination = client.GetFolder("Inbox");
-                    IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
+                FolderAccess inboxAccess = client.Inbox.Open(FolderAccess.ReadWrite);
+                IMailFolder destination = client.GetFolder("Inbox");
+                IList<UniqueId> uids = client.Inbox.Search(SearchQuery.All);
 
-                    if (destination != null)
-                    {
-                        foreach (var x in uids)
-                        {
-                            var message = destination.GetMessage(x);
-                            string subject = message.Subject;
-                            string body = message.TextBody;
-                            Console.WriteLine(body);
-                        }
-                    }
-                }
-                else
+                foreach (var x in uids)
                 {
-                    throw new NullReferenceException();
+                    var message = destination.GetMessage(x);
+                    //Console.WriteLine(message.From +"\n"+ message.Subject+ "\n" + message.Date + message.TextBody);
+                    Console.WriteLine(message.GetTextBody(TextFormat.Plain));
+                    Console.WriteLine();
+                    Console.WriteLine(message.GetTextBody(TextFormat.Text));
                 }
             }
         }
