@@ -24,7 +24,7 @@ namespace Rally
     class RallyOperation
     {
         RallyRestApi _rallyRestApi;
-        public const string ServerName = RallyConstant.ServerId;
+        public const string ServerName = RALLY.ServerId;
 
         public string UserName { get; set; }
 
@@ -42,7 +42,7 @@ namespace Rally
         {
             if (this._rallyRestApi.AuthenticationState != RallyRestApi.AuthenticationResult.Authenticated)
             {
-                _rallyRestApi.Authenticate(this.UserName, this.Password, ServerName, null, RallyConstant.AllowSso);
+                _rallyRestApi.Authenticate(this.UserName, this.Password, ServerName, null, RALLY.AllowSso);
             }
         }
 
@@ -57,8 +57,8 @@ namespace Rally
             this.EnsureRallyIsAuthenticated();
 
             //instantiate a DynamicJsonObject obj
-            DynamicJsonObject djo = _rallyRestApi.GetSubscription(RallyQueryConstant.Workspaces);
-            Request workspaceRequest = new Request(djo[RallyQueryConstant.Workspaces]);
+            DynamicJsonObject djo = _rallyRestApi.GetSubscription(RALLYQUERY.Workspaces);
+            Request workspaceRequest = new Request(djo[RALLYQUERY.Workspaces]);
 
             try
             {
@@ -68,14 +68,14 @@ namespace Rally
                 //iterate through the list and return the list of workspaces
                 foreach (var value in returnWorkspaces.Results)
                 {
-                    var workspaceReference = value[RallyQueryConstant.Reference];
-                    var workspaceName = value[RallyConstant.Name];
-                    Console.WriteLine(RallyQueryConstant.WorkspaceMessage + workspaceName);
+                    var workspaceReference = value[RALLYQUERY.Reference];
+                    var workspaceName = value[RALLY.Name];
+                    Console.WriteLine(RALLYQUERY.WorkspaceMessage + workspaceName);
                 }
             }
             catch (WebException)
             {
-                Console.WriteLine(RallyQueryConstant.WebExceptionMessage);
+                Console.WriteLine(RALLYQUERY.WebExceptionMessage);
             }
         }
         #endregion
@@ -88,29 +88,29 @@ namespace Rally
         {
             this.EnsureRallyIsAuthenticated();
 
-            DynamicJsonObject dObj = _rallyRestApi.GetSubscription(RallyQueryConstant.Workspaces);
+            DynamicJsonObject dObj = _rallyRestApi.GetSubscription(RALLYQUERY.Workspaces);
 
             try
             {
-                Request workspaceRequest = new Request(dObj[RallyQueryConstant.Workspaces]);
+                Request workspaceRequest = new Request(dObj[RALLYQUERY.Workspaces]);
                 QueryResult workSpaceQuery = _rallyRestApi.Query(workspaceRequest);
 
                 foreach (var workspace in workSpaceQuery.Results)
                 {
-                    Request projectRequest = new Request(workspace[RallyQueryConstant.Projects]);
-                    projectRequest.Fetch = new List<string> { RallyConstant.Name };
+                    Request projectRequest = new Request(workspace[RALLYQUERY.Projects]);
+                    projectRequest.Fetch = new List<string> { RALLY.Name };
 
                     //Query for the projects
                     QueryResult projectQuery = _rallyRestApi.Query(projectRequest);
                     foreach (var project in projectQuery.Results)
                     {
-                        Console.WriteLine(project[RallyConstant.Name]);
+                        Console.WriteLine(project[RALLY.Name]);
                     }
                 }
             }
             catch (WebException)
             {
-                Console.WriteLine(RallyQueryConstant.WebExceptionMessage);
+                Console.WriteLine(RALLYQUERY.WebExceptionMessage);
             }
         }
 
@@ -132,38 +132,38 @@ namespace Rally
             this.EnsureRallyIsAuthenticated();
 
             //setup the userStoryRequest
-            Request userStoryRequest = new Request(RallyConstant.HierarchicalRequirement);
+            Request userStoryRequest = new Request(RALLY.HierarchicalRequirement);
             userStoryRequest.Workspace = workspaceRef;
             userStoryRequest.Project = projectRef;
-            userStoryRequest.ProjectScopeUp = RallyConstant.ProjectScopeUp;
-            userStoryRequest.ProjectScopeDown = RallyConstant.ProjectScopeDown;
+            userStoryRequest.ProjectScopeUp = RALLY.ProjectScopeUp;
+            userStoryRequest.ProjectScopeDown = RALLY.ProjectScopeDown;
 
             //fetch data from the story request
             userStoryRequest.Fetch = new List<string>()
             {
-                RallyConstant.FormattedId, RallyConstant.Name, RallyConstant.Owner
+                RALLY.FormattedId, RALLY.Name, RALLY.Owner
             };
 
             try
             {
                 //query the items in the list
-                userStoryRequest.Query = new Query(RallyQueryConstant.LastUpdatDate, Query.Operator.GreaterThan, RallyQueryConstant.DateGreaterThan);
+                userStoryRequest.Query = new Query(RALLYQUERY.LastUpdatDate, Query.Operator.GreaterThan, RALLYQUERY.DateGreaterThan);
                 QueryResult userStoryResult = _rallyRestApi.Query(userStoryRequest);
 
                 //iterate through the userStory Collection
                 foreach (var userStory in userStoryResult.Results)
                 {
-                    var userStoryOwner = userStory[RallyConstant.Owner];
+                    var userStoryOwner = userStory[RALLY.Owner];
                     if (userStoryOwner != null)
                     {
-                        var USOwner = userStoryOwner[RallyQueryConstant.ReferenceObject];
-                        Console.WriteLine(userStory[RallyConstant.FormattedId] + ":" + userStory[RallyConstant.Name] + Environment.NewLine + RallyQueryConstant.UserStoryMessage + USOwner + Environment.NewLine);
+                        var USOwner = userStoryOwner[RALLYQUERY.ReferenceObject];
+                        Console.WriteLine(userStory[RALLY.FormattedId] + ":" + userStory[RALLY.Name] + Environment.NewLine + RALLYQUERY.UserStoryMessage + USOwner + Environment.NewLine);
                     }
                 }
             }
             catch (WebException)
             {
-                Console.WriteLine(RallyQueryConstant.WebExceptionMessage);
+                Console.WriteLine(RALLYQUERY.WebExceptionMessage);
             }
         }
         #endregion
@@ -181,20 +181,20 @@ namespace Rally
             this.EnsureRallyIsAuthenticated();
 
             //stage the request (not using the getters and setters from the Rally Enviornment class
-            Request userStoryRequest = new Request(RallyConstant.HierarchicalRequirement);
+            Request userStoryRequest = new Request(RALLY.HierarchicalRequirement);
             userStoryRequest.Workspace = workspaceRef;
             userStoryRequest.Project = projectRef;
-            userStoryRequest.ProjectScopeUp = RallyConstant.ProjectScopeUp;
-            userStoryRequest.ProjectScopeDown = RallyConstant.ProjectScopeDown;
+            userStoryRequest.ProjectScopeUp = RALLY.ProjectScopeUp;
+            userStoryRequest.ProjectScopeDown = RALLY.ProjectScopeDown;
 
             //fetch US data in the form of a list
             userStoryRequest.Fetch = new List<string>()
         {
-            RallyConstant.FormattedId, RallyConstant.Name, RallyConstant.TasksUpperCase, RallyConstant.Estimate, RallyConstant.State, RallyConstant.Owner
+            RALLY.FormattedId, RALLY.Name, RALLY.TasksUpperCase, RALLY.Estimate, RALLY.State, RALLY.Owner
         };
 
             //Userstory Query
-            userStoryRequest.Query = (new Query(RallyQueryConstant.LastUpdatDate, Query.Operator.GreaterThan, RallyQueryConstant.DateGreaterThan));
+            userStoryRequest.Query = (new Query(RALLYQUERY.LastUpdatDate, Query.Operator.GreaterThan, RALLYQUERY.DateGreaterThan));
 
             try
             {
@@ -204,44 +204,44 @@ namespace Rally
                 //iterate through the query results
                 foreach (var userStory in userStoryResult.Results)
                 {
-                    var userStoryOwner = userStory[RallyConstant.Owner];
+                    var userStoryOwner = userStory[RALLY.Owner];
                     if (userStoryOwner != null) //return only US who have an assigned owner
                     {
-                        var USOwner = userStoryOwner[RallyQueryConstant.ReferenceObject];
-                        Console.WriteLine(userStory[RallyConstant.FormattedId] + ":" + userStory[RallyConstant.Name]);
-                        Console.WriteLine(RallyQueryConstant.UserStoryMessage + USOwner);
+                        var USOwner = userStoryOwner[RALLYQUERY.ReferenceObject];
+                        Console.WriteLine(userStory[RALLY.FormattedId] + ":" + userStory[RALLY.Name]);
+                        Console.WriteLine(RALLYQUERY.UserStoryMessage + USOwner);
                     }
 
                     //Task Request
-                    Request taskRequest = new Request(userStory[RallyConstant.TasksUpperCase]);
+                    Request taskRequest = new Request(userStory[RALLY.TasksUpperCase]);
                     QueryResult taskResult = _rallyRestApi.Query(taskRequest);
                     if (taskResult.TotalResultCount > 0)
                     {
                         foreach (var task in taskResult.Results)
                         {
-                            var taskName = task[RallyConstant.Name];
-                            var owner = task[RallyConstant.Owner];
-                            var taskState = task[RallyConstant.State];
-                            var taskEstimate = task[RallyConstant.Estimate];
+                            var taskName = task[RALLY.Name];
+                            var owner = task[RALLY.Owner];
+                            var taskState = task[RALLY.State];
+                            var taskEstimate = task[RALLY.Estimate];
                             //var taskDescription = task[RallyField.description];
 
                             if (owner != null)
                             {
-                                var ownerName = owner[RallyQueryConstant.ReferenceObject];
-                                Console.WriteLine(RallyQueryConstant.TaskName + taskName + Environment.NewLine + RallyQueryConstant.TaskOwner + ownerName + Environment.NewLine + RallyQueryConstant.TaskState + taskState + Environment.NewLine + RallyQueryConstant.TaskEstimate + taskEstimate);
+                                var ownerName = owner[RALLYQUERY.ReferenceObject];
+                                Console.WriteLine(RALLYQUERY.TaskName + taskName + Environment.NewLine + RALLYQUERY.TaskOwner + ownerName + Environment.NewLine + RALLYQUERY.TaskState + taskState + Environment.NewLine + RALLYQUERY.TaskEstimate + taskEstimate);
                                 //Console.WriteLine(QueryField.taskDescription + taskDescription);
                             }
                         }
                     }
                     else
                     {
-                        Console.WriteLine(RallyQueryConstant.TaskMessage);
+                        Console.WriteLine(RALLYQUERY.TaskMessage);
                     }
                 }
             }
             catch (WebException)
             {
-                Console.WriteLine(RallyQueryConstant.WebExceptionMessage);
+                Console.WriteLine(RALLYQUERY.WebExceptionMessage);
             }
 
         }
@@ -254,24 +254,24 @@ namespace Rally
 
             this.EnsureRallyIsAuthenticated();
 
-            Request iterationRequest = new Request(RallyConstant.Iteration);
+            Request iterationRequest = new Request(RALLY.Iteration);
             iterationRequest.Workspace = workspace;
             iterationRequest.Project = project;
-            iterationRequest.ProjectScopeUp = RallyConstant.ProjectScopeUp;
-            iterationRequest.ProjectScopeDown = RallyConstant.ProjectScopeDown;
+            iterationRequest.ProjectScopeUp = RALLY.ProjectScopeUp;
+            iterationRequest.ProjectScopeDown = RALLY.ProjectScopeDown;
 
             try
             {
                 iterationRequest.Fetch = new List<string>()
                 {
-                 RallyConstant.Name
+                 RALLY.Name
                 };
 
-                iterationRequest.Query = new Query(RallyConstant.Project, Query.Operator.Equals, RallyQueryConstant.ScrumTeamSampleProject);
+                iterationRequest.Query = new Query(RALLY.Project, Query.Operator.Equals, RALLYQUERY.ScrumTeamSampleProject);
                 QueryResult queryResult = _rallyRestApi.Query(iterationRequest);
                 foreach (var iteration in queryResult.Results)
                 {
-                    Console.WriteLine(iteration[RallyConstant.Name]);
+                    Console.WriteLine(iteration[RALLY.Name]);
                 }
 
             }
@@ -300,18 +300,18 @@ namespace Rally
 
             //DynamicJsonObject
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyConstant.WorkSpace] = workspace;
-            toCreate[RallyConstant.Project] = project;
-            toCreate[RallyConstant.Name] = userstory;
-            toCreate[RallyConstant.Description] = userstoryDescription;
-            toCreate[RallyConstant.Owner] = userstoryOwner;
-            toCreate[RallyConstant.PlanEstimate] = "1";
-            toCreate[RallyConstant.PortfolioItem] = RallyQueryConstant.FeatureShareProject;
-            //toCreate[RallyConstant.Iteration] = usIteration;
+            toCreate[RALLY.WorkSpace] = workspace;
+            toCreate[RALLY.Project] = project;
+            toCreate[RALLY.Name] = userstory;
+            toCreate[RALLY.Description] = userstoryDescription;
+            toCreate[RALLY.Owner] = userstoryOwner;
+            toCreate[RALLY.PlanEstimate] = "1";
+            toCreate[RALLY.PortfolioItem] = RALLYQUERY.FeatureShareProject;
+            //toCreate[RALLY.Iteration] = usIteration;
 
             try
             {
-                CreateResult createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
+                CreateResult createUserStory = _rallyRestApi.Create(RALLY.HierarchicalRequirement, toCreate);
                 Console.WriteLine("Created Userstory: " + createUserStory.Reference);
             }
             catch (WebException e)
@@ -338,23 +338,23 @@ namespace Rally
             this.EnsureRallyIsAuthenticated();
 
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyConstant.Name] = taskName;
-            toCreate[RallyConstant.Description] = taskDescription;
-            toCreate[RallyConstant.Owner] = taskOwner;
-            toCreate[RallyConstant.Estimate] = taskEstimate;
-            toCreate[RallyConstant.WorkProduct] = userStoryReference;
+            toCreate[RALLY.Name] = taskName;
+            toCreate[RALLY.Description] = taskDescription;
+            toCreate[RALLY.Owner] = taskOwner;
+            toCreate[RALLY.Estimate] = taskEstimate;
+            toCreate[RALLY.WorkProduct] = userStoryReference;
 
             //create a task and attach it to a userStory
             try
             {
                 Console.WriteLine("<<Creating TA>>");
-                CreateResult createTask = _rallyRestApi.Create(RallyConstant.TasksLowerCase, toCreate);
+                CreateResult createTask = _rallyRestApi.Create(RALLY.TasksLowerCase, toCreate);
                 Console.WriteLine("<<Created TA>>");
             }
             catch (WebException)
             {
 
-                Console.WriteLine(RallyQueryConstant.WebExceptionMessage);
+                Console.WriteLine(RALLYQUERY.WebExceptionMessage);
             }
 
         }
@@ -427,8 +427,8 @@ namespace Rally
         public void SyncUsingMimeKit(string workspace, string project)
         {
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyConstant.WorkSpace] = workspace;
-            toCreate[RallyConstant.Project] = project;
+            toCreate[RALLY.WorkSpace] = workspace;
+            toCreate[RALLY.Project] = project;
             DynamicJsonObject attachmentContent = new DynamicJsonObject();
             DynamicJsonObject attachmentContainer = new DynamicJsonObject();
             CreateResult createUserStory;
@@ -450,9 +450,9 @@ namespace Rally
             using (var client = new ImapClient())
             {
                 client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
-                client.Connect(EmailConstant.GoogleHost, EmailConstant.ImapPort, SecureSocketOptions.SslOnConnect);
-                client.AuthenticationMechanisms.Remove(EmailConstant.GoogleOAuth);
-                client.Authenticate(EmailConstant.GoogleUsername, EmailConstant.GenericPassword);
+                client.Connect(EMAIL.GoogleHost, EMAIL.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.AuthenticationMechanisms.Remove(EMAIL.GoogleOAuth);
+                client.Authenticate(EMAIL.GoogleUsername, EMAIL.GenericPassword);
 
                 client.Inbox.Open(FolderAccess.ReadWrite);
                 IMailFolder inboxFolder = client.GetFolder("Inbox");
@@ -469,14 +469,14 @@ namespace Rally
                         emailSubject = "<No Subject User Story>";
                     }
 
-                    toCreate[RallyConstant.Name] = (emailSubject);
-                    toCreate[RallyConstant.Description] = (emailBody);
-                    createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
+                    toCreate[RALLY.Name] = (emailSubject);
+                    toCreate[RALLY.Description] = (emailBody);
+                    createUserStory = _rallyRestApi.Create(RALLY.HierarchicalRequirement, toCreate);
 
                     foreach (MimeEntity attachment in message.BodyParts)
                     {
                         string attachmentFile = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
-                        string attachmentFilePath = Concat(StorageConstant.MimeKitAttachmentsDirectory, Path.GetFileName(attachmentFile));
+                        string attachmentFilePath = Concat(STORAGE.MimeKitAttachmentsDirectory, Path.GetFileName(attachmentFile));
 
                         if (!IsNullOrWhiteSpace(attachmentFile))
                         {
@@ -486,7 +486,7 @@ namespace Rally
                                 string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachmentFilePath);
                                 attachmentFile = Format(fileNameWithoutExtension + "-{0}" + "{1}", ++anotherOne,
                                     extension);
-                                attachmentFilePath = Path.Combine(StorageConstant.MimeKitAttachmentsDirectory,
+                                attachmentFilePath = Path.Combine(STORAGE.MimeKitAttachmentsDirectory,
                                     attachmentFile);
                             }
 
@@ -500,7 +500,7 @@ namespace Rally
                         }
                     }
 
-                    allAttachments = Directory.GetFiles(StorageConstant.MimeKitAttachmentsDirectory);
+                    allAttachments = Directory.GetFiles(STORAGE.MimeKitAttachmentsDirectory);
                     foreach (string file in allAttachments)
                     {
                         base64String = FileToBase64(file);
@@ -522,20 +522,20 @@ namespace Rally
                         try
                         {
                             //create attachment content
-                            attachmentContent[RallyConstant.Content] = attachmentPair.Key;
-                            attachmentContentCreateResult = _rallyRestApi.Create(RallyConstant.AttachmentContent,
+                            attachmentContent[RALLY.Content] = attachmentPair.Key;
+                            attachmentContentCreateResult = _rallyRestApi.Create(RALLY.AttachmentContent,
                                 attachmentContent);
                             userStoryReference = attachmentContentCreateResult.Reference;
 
                             //create attachment contianer
-                            attachmentContainer[RallyConstant.Artifact] = createUserStory.Reference;
-                            attachmentContainer[RallyConstant.Content] = userStoryReference;
-                            attachmentContainer[RallyConstant.Name] = attachmentPair.Value;
-                            attachmentContainer[RallyConstant.Description] = RallyConstant.EmailAttachment;
-                            attachmentContainer[RallyConstant.ContentType] = "file/";
+                            attachmentContainer[RALLY.Artifact] = createUserStory.Reference;
+                            attachmentContainer[RALLY.Content] = userStoryReference;
+                            attachmentContainer[RALLY.Name] = attachmentPair.Value;
+                            attachmentContainer[RALLY.Description] = RALLY.EmailAttachment;
+                            attachmentContainer[RALLY.ContentType] = "file/";
 
                             //Create & associate the attachment
-                            attachmentContainerCreateResult = _rallyRestApi.Create(RallyConstant.Attachment,
+                            attachmentContainerCreateResult = _rallyRestApi.Create(RALLY.Attachment,
                                 attachmentContainer);
                         }
                         catch (WebException e)
@@ -556,9 +556,9 @@ namespace Rally
         public void SyncThroughLabels(string workspace)
         {
             #region variables
-            SlackClient _slackClient = new SlackClient(RallyConstant.SlackApiToken, 100);
+            SlackClient _slackClient = new SlackClient(SLACK.SlackApiToken, 100);
             DynamicJsonObject toCreate = new DynamicJsonObject();
-            toCreate[RallyConstant.WorkSpace] = workspace;
+            toCreate[RALLY.WorkSpace] = workspace;
             DynamicJsonObject attachmentContent = new DynamicJsonObject();
             DynamicJsonObject attachmentContainer = new DynamicJsonObject();
             CreateResult createUserStory;
@@ -586,41 +586,41 @@ namespace Rally
             {
                 #region authentication
                 client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
-                client.Connect(EmailConstant.GoogleHost, EmailConstant.ImapPort, SecureSocketOptions.SslOnConnect);
-                client.AuthenticationMechanisms.Remove(EmailConstant.GoogleOAuth);
-                client.Authenticate(EmailConstant.GoogleUsername, EmailConstant.GenericPassword);
+                client.Connect(EMAIL.GoogleHost, EMAIL.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.AuthenticationMechanisms.Remove(EMAIL.GoogleOAuth);
+                client.Authenticate(EMAIL.GoogleUsername, EMAIL.GenericPassword);
                 #endregion
 
                 client.Inbox.Open(FolderAccess.ReadWrite);
-                IMailFolder parentFolder = client.GetFolder(EmailConstant.EnrollmentStudentServicesFolder);
-                IMailFolder processedFolder = parentFolder.GetSubfolder(RallyQueryConstant.ProcessedEnrollmentStudentServices);
+                IMailFolder parentFolder = client.GetFolder(EMAIL.EnrollmentStudentServicesFolder);
+                IMailFolder processedFolder = parentFolder.GetSubfolder(RALLYQUERY.ProcessedEnrollmentStudentServices);
 
                 foreach (IMailFolder childFolder in parentFolder.GetSubfolders())
                 {
                     #region Folders
-                    if (childFolder.Name.Equals(RallyQueryConstant.GmailFolderCatalyst2016))
+                    if (childFolder.Name.Equals(RALLYQUERY.GmailFolderCatalyst2016))
                     {
-                        toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectCatalyst2016;
+                        toCreate[RALLY.Project] = RALLYQUERY.ProjectCatalyst2016;
                         slackChannel = SLACK.Channelcatalyst2016;
                     }
-                    else if (childFolder.Name.Equals(RallyQueryConstant.GmailFolderHonorsEnhancements))
+                    else if (childFolder.Name.Equals(RALLYQUERY.GmailFolderHonorsEnhancements))
                     {
-                        toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectHonorsEnhancements;
+                        toCreate[RALLY.Project] = RALLYQUERY.ProjectHonorsEnhancements;
                         slackChannel = SLACK.ChannelHonorsEnhancements;
                     }
-                    else if (childFolder.Name.Equals(RallyQueryConstant.GmailFolderPalHelp))
+                    else if (childFolder.Name.Equals(RALLYQUERY.GmailFolderPalHelp))
                     {
-                        toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectPalHelp;
+                        toCreate[RALLY.Project] = RALLYQUERY.ProjectPalHelp;
                         slackChannel = SLACK.ChannelPalHelp;
                     }
-                    else if (childFolder.Name.Equals(RallyQueryConstant.GmailFolderPciAzureTouchNetImplementation))
+                    else if (childFolder.Name.Equals(RALLYQUERY.GmailFolderPciAzureTouchNetImplementation))
                     {
-                        toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectPciAzureTouchNetImplementation;
+                        toCreate[RALLY.Project] = RALLYQUERY.ProjectPciAzureTouchNetImplementation;
                         slackChannel = SLACK.ChannelAzureTouchNet;
                     }
                     else
                     {
-                        toCreate[RallyConstant.Project] = RallyQueryConstant.ProjectScrumptious;
+                        toCreate[RALLY.Project] = RALLYQUERY.ProjectScrumptious;
                         slackChannel = SLACK.ChannelScrumptious;
                     }
                     #endregion
@@ -646,9 +646,9 @@ namespace Rally
                                 userStorySubject = "<No Subject User Story>";
                             }
 
-                            toCreate[RallyConstant.Name] = userStorySubject;
-                            toCreate[RallyConstant.Description] = userStoryDescription;
-                            createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, toCreate);
+                            toCreate[RALLY.Name] = userStorySubject;
+                            toCreate[RALLY.Description] = userStoryDescription;
+                            createUserStory = _rallyRestApi.Create(RALLY.HierarchicalRequirement, toCreate);
                             userStoryReference = createUserStory.Reference;
 
                             #region Download Attachments
@@ -657,7 +657,7 @@ namespace Rally
                             {
                                 string attachmentFile = attachment.ContentDisposition?.FileName ??
                                                         attachment.ContentType.Name;
-                                string attachmentFilePath = Concat(StorageConstant.MimeKitAttachmentsDirectoryWork,
+                                string attachmentFilePath = Concat(STORAGE.MimeKitAttachmentsDirectoryWork,
                                     Path.GetFileName(attachmentFile));
 
                                 if (!IsNullOrWhiteSpace(attachmentFile))
@@ -670,7 +670,7 @@ namespace Rally
                                         attachmentFile = Format(fileNameWithoutExtension + "-{0}" + "{1}", ++anotherOne,
                                             extension);
                                         attachmentFilePath =
-                                            Path.Combine(StorageConstant.MimeKitAttachmentsDirectoryWork, attachmentFile);
+                                            Path.Combine(STORAGE.MimeKitAttachmentsDirectoryWork, attachmentFile);
                                     }
 
                                     using (var attachmentStream = File.Create(attachmentFilePath))
@@ -687,7 +687,7 @@ namespace Rally
 
                             #region Process Attachments
 
-                            allAttachments = Directory.GetFiles(StorageConstant.MimeKitAttachmentsDirectoryWork);
+                            allAttachments = Directory.GetFiles(STORAGE.MimeKitAttachmentsDirectoryWork);
                             foreach (string file in allAttachments)
                             {
                                 base64String = FileToBase64(file);
@@ -711,21 +711,21 @@ namespace Rally
                                 try
                                 {
                                     //create attachment content
-                                    attachmentContent[RallyConstant.Content] = attachmentPair.Key;
+                                    attachmentContent[RALLY.Content] = attachmentPair.Key;
                                     attachmentContentCreateResult = _rallyRestApi.Create(
-                                        RallyConstant.AttachmentContent,
+                                        RALLY.AttachmentContent,
                                         attachmentContent);
                                     attachmentReference = attachmentContentCreateResult.Reference;
 
                                     //create attachment contianer
-                                    attachmentContainer[RallyConstant.Artifact] = userStoryReference;
-                                    attachmentContainer[RallyConstant.Content] = attachmentReference;
-                                    attachmentContainer[RallyConstant.Name] = attachmentPair.Value;
-                                    attachmentContainer[RallyConstant.Description] = RallyConstant.EmailAttachment;
-                                    attachmentContainer[RallyConstant.ContentType] = "file/";
+                                    attachmentContainer[RALLY.Artifact] = userStoryReference;
+                                    attachmentContainer[RALLY.Content] = attachmentReference;
+                                    attachmentContainer[RALLY.Name] = attachmentPair.Value;
+                                    attachmentContainer[RALLY.Description] = RALLY.EmailAttachment;
+                                    attachmentContainer[RALLY.ContentType] = "file/";
 
                                     //Create & associate the attachment
-                                    attachmentContainerCreateResult = _rallyRestApi.Create(RallyConstant.Attachment,
+                                    attachmentContainerCreateResult = _rallyRestApi.Create(RALLY.Attachment,
                                         attachmentContainer);
                                     Console.WriteLine("Uploaded to Rally: " + attachmentPair.Value);
                                 }

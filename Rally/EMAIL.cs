@@ -1,6 +1,6 @@
 ﻿namespace Rally
 {
-    class EmailConstant
+    class EMAIL
     {
         /// <summary>
         /// Outlook.cs contains Outlook and Gmail constants.
@@ -22,6 +22,5 @@
         public const string GoogleOAuth = "XOAUTH2";
         public const string GmailInbox = "Inbox";
         public const string EnrollmentStudentServicesFolder = "EnrollmentStudentServicesA&FBursarPropel";
-
     }
 }

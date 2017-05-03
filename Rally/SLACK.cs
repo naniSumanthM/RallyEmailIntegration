@@ -2,6 +2,7 @@
 {
     class SLACK
     {
+        public const string SlackApiToken = "https://hooks.slack.com/services/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";
         public const string UserStoryUrlFormat = "https://rally1.rallydev.com/#/detail/userstory/";
         public const string SlackNotificationBanner = "Rally: User Story Notification";
         public const string SlackUser = "Nani";

@@ -2,10 +2,10 @@
 
 namespace Rally
 {
-    class RallyQueryConstant
+    class RALLYQUERY
     {
         ///<summary>
-        ///RallyQueryConstant.cs holds constants that reference current workspaces, and projects
+        ///RALLYQUERY.cs holds constants that reference current workspaces, and projects
         /// </summary>
 
         public const string Reference = "_ref";

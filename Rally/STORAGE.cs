@@ -1,6 +1,6 @@
 ﻿namespace Rally
 {
-    class StorageConstant
+    class STORAGE
     {
         /// <summary>
         /// SyncConstant.cs stores local location of attachment storage. Paths must be changed according to Enviornment

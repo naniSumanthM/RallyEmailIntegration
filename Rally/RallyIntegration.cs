@@ -65,7 +65,7 @@ namespace Rally
         {
             _rallyRestApi = new RallyRestApi();
             _imapClient = new ImapClient();
-            _slackClient = new SlackClient(RallyConstant.SlackApiToken, 100);
+            _slackClient = new SlackClient(SLACK.SlackApiToken, 100);
             this.GmailUserName = gmailUserName;
             this.GmailPassword = gmailPassword;
             this.RallyUserName = rallyUserName;
@@ -79,8 +79,8 @@ namespace Rally
         {
             if (this._rallyRestApi.AuthenticationState != RallyRestApi.AuthenticationResult.Authenticated)
             {
-                _rallyRestApi.Authenticate(this.RallyUserName, this.RallyPassword, RallyConstant.ServerId, null,
-                    RallyConstant.AllowSso);
+                _rallyRestApi.Authenticate(this.RallyUserName, this.RallyPassword, RALLY.ServerId, null,
+                    RALLY.AllowSso);
             }
         }
 
@@ -93,9 +93,9 @@ namespace Rally
             if (!this._imapClient.IsAuthenticated)
             {
                 client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
-                client.Connect(EmailConstant.GoogleHost, EmailConstant.ImapPort, SecureSocketOptions.SslOnConnect);
-                client.AuthenticationMechanisms.Remove(EmailConstant.GoogleOAuth);
-                client.Authenticate(EmailConstant.GoogleUsername, EmailConstant.GenericPassword);
+                client.Connect(EMAIL.GoogleHost, EMAIL.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.AuthenticationMechanisms.Remove(EMAIL.GoogleOAuth);
+                client.Authenticate(EMAIL.GoogleUsername, EMAIL.GenericPassword);
             }
         }
 
@@ -106,7 +106,7 @@ namespace Rally
         private void SetUpMailbox(ImapClient client)
         {
             client.Inbox.Open(FolderAccess.ReadWrite);
-            _inboxFolder = client.GetFolder(EmailConstant.GmailInbox);
+            _inboxFolder = client.GetFolder(EMAIL.GmailInbox);
             _emailMessageIdsList = client.Inbox.Search(SearchQuery.NotSeen);
             _unreadMessages = _emailMessageIdsList.Count;
         }
@@ -123,13 +123,13 @@ namespace Rally
 
             if (_emailSubject.IsEmpty())
             {
-                _emailSubject = EmailConstant.NoSubject;
+                _emailSubject = EMAIL.NoSubject;
             }
 
-            _toCreate[RallyConstant.Name] = (_emailSubject);
-            _toCreate[RallyConstant.Description] = (_emailBody);
-            _toCreate[RallyConstant.PortfolioItem] = RallyQueryConstant.FeatureShareProject;
-            _createUserStory = _rallyRestApi.Create(RallyConstant.HierarchicalRequirement, _toCreate);
+            _toCreate[RALLY.Name] = (_emailSubject);
+            _toCreate[RALLY.Description] = (_emailBody);
+            _toCreate[RALLY.PortfolioItem] = RALLYQUERY.FeatureShareProject;
+            _createUserStory = _rallyRestApi.Create(RALLY.HierarchicalRequirement, _toCreate);
             Console.WriteLine("Created User Story: " + _emailSubject);
         }
 
@@ -157,7 +157,7 @@ namespace Rally
                 foreach (MimeEntity attachment in message.BodyParts)
                 {
                     string attachmentFile = attachment.ContentDisposition?.FileName ?? attachment.ContentType.Name;
-                    string attachmentFilePath = String.Concat(StorageConstant.MimeKitAttachmentsDirectoryWork,
+                    string attachmentFilePath = String.Concat(STORAGE.MimeKitAttachmentsDirectoryWork,
                         Path.GetFileName(attachmentFile));
 
                     if (!string.IsNullOrWhiteSpace(attachmentFile))
@@ -168,7 +168,7 @@ namespace Rally
                             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(attachmentFilePath);
                             attachmentFile = string.Format(fileNameWithoutExtension + "-{0}" + "{1}",
                                 ++_duplicateFileCount, extension);
-                            attachmentFilePath = Path.Combine(StorageConstant.MimeKitAttachmentsDirectoryWork,
+                            attachmentFilePath = Path.Combine(STORAGE.MimeKitAttachmentsDirectoryWork,
                                 attachmentFile);
                         }
 
@@ -192,7 +192,7 @@ namespace Rally
         private void ProcessAttachments()
         {
             _attachmentsDictionary = new Dictionary<string, string>(25);
-            _allAttachments = Directory.GetFiles(StorageConstant.MimeKitAttachmentsDirectoryWork);
+            _allAttachments = Directory.GetFiles(STORAGE.MimeKitAttachmentsDirectoryWork);
 
             foreach (string file in _allAttachments)
             {
@@ -223,15 +223,15 @@ namespace Rally
             {
                 try
                 {
-                    _attachmentContent[RallyConstant.Content] = attachmentPair.Key;
-                    _attachmentContentCreateResult = _rallyRestApi.Create(RallyConstant.AttachmentContent, _attachmentContent);
+                    _attachmentContent[RALLY.Content] = attachmentPair.Key;
+                    _attachmentContentCreateResult = _rallyRestApi.Create(RALLY.AttachmentContent, _attachmentContent);
                     _userStoryReference = _attachmentContentCreateResult.Reference;
-                    _attachmentContainer[RallyConstant.Artifact] = _createUserStory.Reference;
-                    _attachmentContainer[RallyConstant.Content] = _userStoryReference;
-                    _attachmentContainer[RallyConstant.Name] = attachmentPair.Value;
-                    _attachmentContainer[RallyConstant.Description] = RallyConstant.EmailAttachment;
-                    _attachmentContainer[RallyConstant.ContentType] = StorageConstant.FileType;
-                    _rallyRestApi.Create(RallyConstant.Attachment, _attachmentContainer);
+                    _attachmentContainer[RALLY.Artifact] = _createUserStory.Reference;
+                    _attachmentContainer[RALLY.Content] = _userStoryReference;
+                    _attachmentContainer[RALLY.Name] = attachmentPair.Value;
+                    _attachmentContainer[RALLY.Description] = RALLY.EmailAttachment;
+                    _attachmentContainer[RALLY.ContentType] = STORAGE.FileType;
+                    _rallyRestApi.Create(RALLY.Attachment, _attachmentContainer);
                 }
                 catch (RallyUnavailableException)
                 {
@@ -247,21 +247,21 @@ namespace Rally
         private void PostSlackUserStoryNotification()
         {
             _objectId = Ref.GetOidFromRef(_createUserStory.Reference);
-            _userStoryUrl = String.Concat(RallyConstant.UserStoryUrlFormat, _objectId);
+            _userStoryUrl = String.Concat(SLACK.UserStoryUrlFormat, _objectId);
             _slackAttachmentString = String.Format("User Story: <{0} | {1} >", _userStoryUrl, _message.Subject);
 
             SlackMessage message = new SlackMessage
             {
-                Channel = RallyConstant.SlackChannel,
-                Text = RallyConstant.SlackNotificationText,
-                Username = RallyConstant.SlackUser
+                Channel = SLACK.ChannelGeneral,
+                Text = SLACK.SlackNotificationBanner,
+                Username = SLACK.SlackUser
             };
 
             SlackAttachment slackAttachment = new SlackAttachment
             {
                 Fallback = _slackAttachmentString,
                 Text = _slackAttachmentString,
-                Color = RallyConstant.HexColor
+                Color = SLACK.HexColor
             };
 
             message.Attachments = new List<SlackAttachment> { slackAttachment };
@@ -275,7 +275,7 @@ namespace Rally
         /// <param name="messageId"></param>
         private void MoveMessagesToProcessedFolder(UniqueId messageId)
         {
-            _processedFolder = _imapClient.GetFolder(EmailConstant.GmailProcessedFolder);
+            _processedFolder = _imapClient.GetFolder(EMAIL.GmailProcessedFolder);
             _imapClient.Inbox.MoveTo(messageId, _processedFolder);
         }
 
@@ -290,8 +290,8 @@ namespace Rally
             {
                 LoginToRally();
 
-                _toCreate[RallyConstant.WorkSpace] = rallyWorkspace;
-                _toCreate[RallyConstant.Project] = rallyScrumTeam;
+                _toCreate[RALLY.WorkSpace] = rallyWorkspace;
+                _toCreate[RALLY.Project] = rallyScrumTeam;
 
                 using (_imapClient)
                 {
