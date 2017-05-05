@@ -911,6 +911,37 @@ namespace Email
 
         #endregion
 
+        #region IMAPSMTP
+        public void TestTwoClients()
+        {
+            using (var imapClient = new ImapClient())
+            {
+                imapClient.ServerCertificateValidationCallback = (s, c, ch, e) => true;
+                imapClient.Connect(Constant.GoogleImapHost, Constant.ImapPort, SecureSocketOptions.SslOnConnect);
+                imapClient.AuthenticationMechanisms.Remove(Constant.GoogleOAuth);
+                imapClient.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
+
+                Console.WriteLine(imapClient.IsAuthenticated);
+
+                using (SmtpClient smtpClient = new MailKit.Net.Smtp.SmtpClient())
+                {
+                    smtpClient.ServerCertificateValidationCallback = (s, c, h, e) => true;
+                    smtpClient.Connect("smtp.gmail.com", 465, true);
+                    smtpClient.AuthenticationMechanisms.Remove(Constant.GoogleOAuth);
+                    smtpClient.Authenticate(Constant.GoogleUserName, Constant.GenericPassword);
+
+                    Console.WriteLine(smtpClient.IsAuthenticated);
+
+                    smtpClient.Disconnect(true);
+                }
+
+                imapClient.Disconnect(true);
+            }
+        }
+
+        #endregion
     }
 }
+
+
 

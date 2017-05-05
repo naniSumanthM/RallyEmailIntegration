@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using MailKit;
 using MailKit.Net.Imap;
+using MailKit.Net.Smtp;
 using MailKit.Search;
 using MailKit.Security;
 using MimeKit;
@@ -25,11 +26,8 @@ namespace Rally
     {
         RallyRestApi _rallyRestApi;
         public const string ServerName = RALLY.ServerId;
-
         public string UserName { get; set; }
-
         public string Password { get; set; }
-
         public RallyOperation(string userName, string password)
         {
             _rallyRestApi = new RallyRestApi();
@@ -37,7 +35,6 @@ namespace Rally
             this.Password = password;
             this.EnsureRallyIsAuthenticated();
         }
-
         private void EnsureRallyIsAuthenticated()
         {
             if (this._rallyRestApi.AuthenticationState != RallyRestApi.AuthenticationResult.Authenticated)
@@ -189,9 +186,9 @@ namespace Rally
 
             //fetch US data in the form of a list
             userStoryRequest.Fetch = new List<string>()
-        {
-            RALLY.FormattedId, RALLY.Name, RALLY.TasksUpperCase, RALLY.Estimate, RALLY.State, RALLY.Owner
-        };
+            {
+                RALLY.FormattedId, RALLY.Name, RALLY.TasksUpperCase, RALLY.Estimate, RALLY.State, RALLY.Owner
+            };
 
             //Userstory Query
             userStoryRequest.Query = (new Query(RALLYQUERY.LastUpdatDate, Query.Operator.GreaterThan, RALLYQUERY.DateGreaterThan));
@@ -251,7 +248,6 @@ namespace Rally
         #region: Query Iterations
         public void GetIterations(string workspace, string project)
         {
-
             this.EnsureRallyIsAuthenticated();
 
             Request iterationRequest = new Request(RALLY.Iteration);
@@ -450,7 +446,7 @@ namespace Rally
             using (var client = new ImapClient())
             {
                 client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
-                client.Connect(EMAIL.GoogleHost, EMAIL.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.Connect(EMAIL.GoogleImapHost, EMAIL.ImapPort, SecureSocketOptions.SslOnConnect);
                 client.AuthenticationMechanisms.Remove(EMAIL.GoogleOAuth);
                 client.Authenticate(EMAIL.GoogleUsername, EMAIL.GenericPassword);
 
@@ -553,6 +549,11 @@ namespace Rally
         #endregion
 
         #region SyncThroughLabels
+        /// <summary>
+        /// Rally is authenticated in the constructor
+        /// </summary>
+        /// <param name="workspace"></param>
+
         public void SyncThroughLabels(string workspace)
         {
             #region variables
@@ -580,16 +581,9 @@ namespace Rally
             string slackChannel;
             #endregion
 
-            EnsureRallyIsAuthenticated();
-
-            using (var client = new ImapClient())
+            using (ImapClient client = new ImapClient())
             {
-                #region authentication
-                client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
-                client.Connect(EMAIL.GoogleHost, EMAIL.ImapPort, SecureSocketOptions.SslOnConnect);
-                client.AuthenticationMechanisms.Remove(EMAIL.GoogleOAuth);
-                client.Authenticate(EMAIL.GoogleUsername, EMAIL.GenericPassword);
-                #endregion
+                AuthenticateWithGoogleImap(client);
 
                 client.Inbox.Open(FolderAccess.ReadWrite);
                 IMailFolder parentFolder = client.GetFolder(EMAIL.EnrollmentStudentServicesFolder);
@@ -632,11 +626,11 @@ namespace Rally
                     if (childFolderMsgUniqueIds.Any())
                     {
                         foreach (UniqueId uid in childFolderMsgUniqueIds)
-                        { 
+                        {
                             MimeMessage message = childFolder.GetMessage(uid);
                             userStorySubject = message.Subject;
                             userStoryDescription =
-                                         "From: "+ message.From +
+                                         "From: " + message.From +
                                 "<br>" + "Date Sent: " + message.Date + "</br>" +
                                 "<br>" + "Subject: " + userStorySubject + "</br>" +
                                 "<br>" + "Request: " + message.GetTextBody(TextFormat.Plain) + "<br>";
@@ -738,6 +732,13 @@ namespace Rally
 
                             #endregion
 
+                            #region See and Move
+
+                            childFolder.SetFlags(uid, MessageFlags.Seen, true);
+                            childFolder.MoveTo(uid, processedFolder);
+
+                            #endregion
+
                             #region Slack
 
                             if (userStoryReference != null)
@@ -772,11 +773,36 @@ namespace Rally
 
                             #endregion
 
-                            #region See and Move
+                            #region Email
+                            using (SmtpClient smtpClient = new SmtpClient())
+                            {
+                                if (!smtpClient.IsAuthenticated)
+                                {
+                                    AuthenticateWithGoogleSmtp(smtpClient);
+                                }
 
-                            childFolder.SetFlags(uid, MessageFlags.Seen, true);
-                            childFolder.MoveTo(uid, processedFolder);
+                                //iterate throught the email addresses, to send the emails
+                                List<MailboxAddress> emailNoticationList = new List<MailboxAddress>();
+                                //emailNoticationList.Add(new MailboxAddress("riepjr@UCMAIL.UC.EDU"));
+                                emailNoticationList.Add(new MailboxAddress("maddirsh@mail.uc.edu"));
 
+                                foreach (var mailboxAddress in emailNoticationList)
+                                {
+                                    MimeMessage emailNotificationMessage = new MimeMessage();
+                                    emailNotificationMessage.From.Add(new MailboxAddress("Rally Integration", EMAIL.GoogleUsername));
+                                    emailNotificationMessage.To.Add(mailboxAddress);
+                                    emailNotificationMessage.Subject = "Rally Notification: " + userStorySubject;
+                                    emailNotificationMessage.Body = new TextPart("plain")
+                                    {
+                                        Text = "User Story: " + _userStoryUrl
+                                    };
+
+                                    smtpClient.Send(emailNotificationMessage);
+                                }
+
+                                //disconnect here...
+                                //this will make the program connect and disconnect in a loop
+                            }
                             #endregion
 
                             Console.WriteLine(message.Subject + " Created");
@@ -792,7 +818,61 @@ namespace Rally
             }
         }
 
+        private static void AuthenticateWithGoogleSmtp(SmtpClient client)
+        {
+            client.ServerCertificateValidationCallback = (s, c, h, e) => true;
+            client.Connect(EMAIL.GoogleSmtpHost, EMAIL.SmtpPort, true);
+            client.AuthenticationMechanisms.Remove(EMAIL.GoogleOAuth);
+            client.Authenticate(EMAIL.GoogleUsername, EMAIL.GenericPassword);
+        }
+
+        private static void AuthenticateWithGoogleImap(ImapClient client)
+        {
+            #region authentication
+
+            client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
+            client.Connect(EMAIL.GoogleImapHost, EMAIL.ImapPort, SecureSocketOptions.SslOnConnect);
+            client.AuthenticationMechanisms.Remove(EMAIL.GoogleOAuth);
+            client.Authenticate(EMAIL.GoogleUsername, EMAIL.GenericPassword);
+
+            #endregion
+        }
+
         #endregion
 
+        //set project string according to the folder
+        //get the List<string> 
+        //iterate over that List to get the queried emails
+        //send emails to users using smtp client
+        #region GetProjectAdmins
+        public void GetProjectAdmins(string workspaceRef)
+        {
+            Request projectAdminRequest = new Request("ProjectPermission");
+            projectAdminRequest.Workspace = workspaceRef;
+            projectAdminRequest.Fetch = new List<string>() { "User", "EmailAddress" };
+            projectAdminRequest.Query = Query.And(
+                new Query("Project", Query.Operator.Equals, RALLYQUERY.ProcessedEnrollmentStudentServices),
+                new Query("Role", Query.Operator.Equals, "Project Admin"));
+
+            QueryResult pAdminResult = _rallyRestApi.Query(projectAdminRequest);
+
+            Console.WriteLine(pAdminResult.Results.Any()); 
+            if (pAdminResult.Results.Any())
+            {
+                foreach (var admin in pAdminResult.Results)
+                {
+                    Console.WriteLine(admin["EmailAddress"]);
+                }
+            }
+        }
+        #endregion
     }
 }
+
+
+/*
+TODO: query for project owners, to send the email
+Choose Gmail || Outlook
+Refactor 
+*/
+

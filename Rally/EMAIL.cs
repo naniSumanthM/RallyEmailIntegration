@@ -7,8 +7,10 @@
         /// </summary>
 
         public const int ImapPort = 993;
+        public const int SmtpPort = 465;
         public const string OutlookHost = "imap-mail.outlook.com";
-        public const string GoogleHost = "imap.gmail.com";
+        public const string GoogleImapHost = "imap.gmail.com";
+        public const string GoogleSmtpHost = "smtp.gmail.com";
         public const string OutlookInboxFolder = "INBOX";
         public const string UnseenMessages = "UNSEEN";
         public const string SeenMessages = "SEEN";

@@ -93,7 +93,7 @@ namespace Rally
             if (!this._imapClient.IsAuthenticated)
             {
                 client.ServerCertificateValidationCallback = (s, c, ch, e) => true;
-                client.Connect(EMAIL.GoogleHost, EMAIL.ImapPort, SecureSocketOptions.SslOnConnect);
+                client.Connect(EMAIL.GoogleImapHost, EMAIL.ImapPort, SecureSocketOptions.SslOnConnect);
                 client.AuthenticationMechanisms.Remove(EMAIL.GoogleOAuth);
                 client.Authenticate(EMAIL.GoogleUsername, EMAIL.GenericPassword);
             }
