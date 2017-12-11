@@ -231,7 +231,7 @@ namespace Email
             {
                 //Authenticate 
                 client.ConnectSsl("imap.gmail.com", 993);
-                client.Login("rallyintegration@gmail.com", "iYmcmb24");
+                client.Login("rallyintegration@gmail.com", "secret");
 
                 Mailbox inbox = client.SelectMailbox("Inbox");
                 Console.WriteLine(inbox.MessageCount);
@@ -726,20 +726,7 @@ namespace Email
 
                         if (!string.IsNullOrWhiteSpace(fileName))
                         {
-                            #region MessagePart
-
-                            //if (attachment is MessagePart)
-                            //{
-                            //    string inlineAttachment = Path.Combine(Constant.InlineAttachmentsDirectory, fileName);
-                            //    using (var inlineStream = File.Create(inlineAttachment))
-                            //    {
-                            //        MessagePart rfc822 = (MessagePart)attachment;
-                            //        rfc822.Message.WriteTo(inlineStream);
-                            //    }
-                            //} 
-
-                            #endregion
-
+                
                             if (File.Exists(regularAttachment))
                             {
                                 string extension = Path.GetExtension(regularAttachment);
@@ -823,17 +810,6 @@ namespace Email
                                 Console.WriteLine("Downloaded: " + fileName);
                             }
                         }
-
-                        #region Sketch
-
-                        //create user story
-                        //download all the attachments
-                        //process attachments
-                        //upload to Rally
-                        //send slack notification
-                        //send email notification  
-
-                        #endregion
                     }
                 }
                 client.Disconnect(true);

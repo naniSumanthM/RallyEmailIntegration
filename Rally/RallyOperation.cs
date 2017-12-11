@@ -783,7 +783,6 @@ namespace Rally
 
                                 //iterate throught the email addresses, to send the emails
                                 List<MailboxAddress> emailNoticationList = new List<MailboxAddress>();
-                                //emailNoticationList.Add(new MailboxAddress("riepjr@UCMAIL.UC.EDU"));
                                 emailNoticationList.Add(new MailboxAddress("maddirsh@mail.uc.edu"));
 
                                 foreach (var mailboxAddress in emailNoticationList)
@@ -868,11 +867,4 @@ namespace Rally
         #endregion
     }
 }
-
-
-/*
-TODO: query for project owners, to send the email
-Choose Gmail || Outlook
-Refactor 
-*/
 

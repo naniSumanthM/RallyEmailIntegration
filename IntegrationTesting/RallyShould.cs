@@ -42,7 +42,7 @@ namespace IntegrationTesting
             Imap4Client client = new Imap4Client();
 
             client.ConnectSsl("imap-mail.outlook.com", 993);
-            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+            client.Login("sumanthmaddirala@outlook.com", "secret");
 
             Assert.AreEqual(true, client.IsConnected);
         }
@@ -91,7 +91,7 @@ namespace IntegrationTesting
             Imap4Client client = new Imap4Client();
 
             client.ConnectSsl("imap-mail.outlook.com", 993);
-            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+            client.Login("sumanthmaddirala@outlook.com", "secret");
 
             Assert.AreEqual(true, client.IsConnected);
 
@@ -117,7 +117,7 @@ namespace IntegrationTesting
 
             //authenicate
             client.ConnectSsl("imap-mail.outlook.com", 993);
-            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+            client.Login("sumanthmaddirala@outlook.com", "secret");
 
             Mailbox inbox = client.SelectMailbox("Conversations");
             int[] messageCount = inbox.Search("ALL");
@@ -130,7 +130,7 @@ namespace IntegrationTesting
         {
             Imap4Client client = new Imap4Client();
             client.ConnectSsl("imap-mail.outlook.com", 993);
-            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+            client.Login("sumanthmaddirala@outlook.com", "secret");
 
             Mailbox mainMailbox = client.SelectMailbox("Sync");
             int[] mainUnreadMessages = mainMailbox.Search("UNSEEN");
@@ -153,7 +153,7 @@ namespace IntegrationTesting
         {
             Imap4Client client = new Imap4Client();
             client.ConnectSsl("imap-mail.outlook.com", 993);
-            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+            client.Login("sumanthmaddirala@outlook.com", "secret");
 
             Mailbox mainMailbox = client.SelectMailbox("Sync");
             int[] mainUnreadMessages = mainMailbox.Search("UNSEEN");
@@ -183,7 +183,7 @@ namespace IntegrationTesting
 
             //authenicate
             client.ConnectSsl("imap-mail.outlook.com", 993);
-            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+            client.Login("sumanthmaddirala@outlook.com", "secret");
 
             Mailbox inbox = client.SelectMailbox("Conversations");
             int[] unreadMessages = inbox.Search("UNSEEN");
@@ -213,7 +213,7 @@ namespace IntegrationTesting
 
             //authenicate
             client.ConnectSsl("imap-mail.outlook.com", 993);
-            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+            client.Login("sumanthmaddirala@outlook.com", "secret");
 
             Mailbox inbox = client.SelectMailbox("Conversations");
             int[] unreadMessages = inbox.Search("UNSEEN");
@@ -245,7 +245,7 @@ namespace IntegrationTesting
             using (var client = new Imap4Client())
             {
                 client.ConnectSsl("imap.gmail.com", 993);
-                client.Login("rallyintegration@gmail.com", "iYmcmb24");
+                client.Login("rallyintegration@gmail.com", "secret");
 
                 Mailbox mails = client.SelectMailbox(_selectedMailBox);
                 var mailMessages = mails.Search("ALL");
@@ -271,7 +271,7 @@ namespace IntegrationTesting
         {
             Imap4Client client = new Imap4Client();
             client.ConnectSsl("imap-mail.outlook.com", 993);
-            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+            client.Login("sumanthmaddirala@outlook.com", "secret");
 
             Mailbox targetMailbox = client.SelectMailbox("inboxA");
             Mailbox destinationMailbox = client.SelectMailbox("inboxB");
@@ -305,7 +305,7 @@ namespace IntegrationTesting
             Imap4Client client = new Imap4Client();
 
             client.ConnectSsl("imap-mail.outlook.com", 993);
-            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+            client.Login("sumanthmaddirala@outlook.com", "secret");
 
             Mailbox inbox = client.SelectMailbox("Test");
             FlagCollection markAsUnreadFlagCollection = new FlagCollection();
@@ -331,7 +331,7 @@ namespace IntegrationTesting
         {
             Imap4Client client = new Imap4Client();
             client.ConnectSsl("imap-mail.outlook.com", 993);
-            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+            client.Login("sumanthmaddirala@outlook.com", "secret");
 
             Mailbox inbox = client.SelectMailbox("Test");
             int[] allInboxMessages = inbox.Search("ALL");
@@ -355,7 +355,7 @@ namespace IntegrationTesting
             //Authenticate
             Imap4Client client = new Imap4Client();
             client.ConnectSsl("imap-mail.outlook.com", 993);
-            client.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+            client.Login("sumanthmaddirala@outlook.com", "secret");
 
             //File IO
             string directoryPath = "C:\\Users\\suman\\Desktop\\testFolder";
@@ -394,7 +394,7 @@ namespace IntegrationTesting
 
             //Authentication
             imap.ConnectSsl("imap-mail.outlook.com", 993);
-            imap.Login("sumanthmaddirala@outlook.com", "iYmcmb24");
+            imap.Login("sumanthmaddirala@outlook.com", "secret");
 
             var inbox = imap.SelectMailbox(emailFolder);
             var unread = inbox.Search("ALL");
@@ -455,19 +455,6 @@ namespace IntegrationTesting
             Assert.AreEqual(2, attachmentsDictionary.Count);
         }
 
-        [TestMethod]
-        public void GivenAnEmailObjectReturnIfSeenOrUnseen()
-        {
-        }
-
-        [TestMethod]
-        public void GivenAnEmailWithBlankSubjectEnsureNoSubjectUserStoryIsCreated()
-        {
-            //authenticate
-            //parse an email without a subject
-            //make the user story
-            //ensure that the subject is labeled "no Subject"
-        }
     }
 }
 

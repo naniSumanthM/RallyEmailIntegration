@@ -12,7 +12,7 @@
         public const string GoogleUserName = "rallyintegration@gmail.com";
         public const string OutlookUserName = "sumanthmaddirala@outlook.com";
         public const string GoogleOAuth = "XOAUTH2";
-        public const string GenericPassword = "iYmcmb24";
+        public const string GenericPassword = "secret";
         public const string ProcessedFolder = "Processed";
         public const string InboxFolder = "INBOX";
         public const string UnseenMessages = "UNSEEN";

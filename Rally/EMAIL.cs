@@ -20,7 +20,7 @@
         public const string NoBody = "No Body";
         public const string OutlookUsername = "sumanthmaddirala@outlook.com";
         public const string GoogleUsername = "rallyintegration@gmail.com";
-        public const string GenericPassword = "iYmcmb24";
+        public const string GenericPassword = "secret";
         public const string GoogleOAuth = "XOAUTH2";
         public const string GmailInbox = "Inbox";
         public const string EnrollmentStudentServicesFolder = "EnrollmentStudentServicesA&FBursarPropel";

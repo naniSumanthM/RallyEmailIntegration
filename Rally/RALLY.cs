@@ -38,6 +38,6 @@ namespace Rally
         public const string AttachmentContent = "AttachmentContent";
         public const string EmailAttachment = "Email Attachment";
         public const string RallyUserName = "maddirsh@mail.uc.edu";
-        public const string RallyPassword = "iYmcmb24";
+        public const string RallyPassword = "secret";
     }
 }
